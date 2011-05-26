@@ -1,0 +1,30 @@
+/**
+ * \mainpage
+ *
+ * This is tiny Mersenne Twister pseudorandom number
+ * generator's Dynamic Creator(tinymtdc).
+ *
+ * This Project provides pseudorandom number generators of the
+ * Mersenne Prime Period 2<sup>127</sup>-1, and parameter generator
+ * which generates parameters for the generators.
+ *
+ * The following executable files are build by typing \b make \b all.
+ * - tinymt32dc: parameter generator for 32-bit pseudo random number
+ * generators.
+ * - tinymt64dc: parameter generator for 64-bit pseudo random number
+ * generators.
+ * - getid: a tool to get id from a generated parameter, or to
+ *   get parts of parameters from id and sequential number.
+ *
+ * @author Mutsuo Saito, (saito@math.sci.hiroshima-u.ac.jp) Hiroshima University
+ * @author Makoto Matsumoto, The University of Tokyo
+ *
+ * @date 2011-5-16
+ *
+ * Copyright (C) 2011 Mutsuo Saito, Makoto Matsumoto, Hiroshima
+ * University and The University of Tokyo.
+ * All rights reserved.
+ *
+ * The 3-clause BSD License is applied to this software.
+ * \verbinclude LICENSE.txt
+ */
