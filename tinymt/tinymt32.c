@@ -7,7 +7,7 @@
  * @author Makoto Matsumoto (The University of Tokyo)
  *
  * Copyright (C) 2011 Mutsuo Saito, Makoto Matsumoto,
- * Hiroshima University and University of Tokyo.
+ * Hiroshima University and The University of Tokyo.
  * All rights reserved.
  *
  * The 3-clause BSD License is applied to this software, see
@@ -15,6 +15,7 @@
  */
 #include "tinymt32.h"
 #define MIN_LOOP 8
+#define PRE_LOOP 8
 
 /**
  * This function represents a function used in the initialization
@@ -69,6 +70,9 @@ void tinymt32_init(tinymt32_t * random, uint32_t seed) {
 	       ^ (random->status[(i - 1) & 3] >> 30));
     }
     period_certification(random);
+    for (int i = 0; i < PRE_LOOP; i++) {
+	tinymt32_next_state(random);
+    }
 }
 
 /**
@@ -129,4 +133,7 @@ void tinymt32_init_by_array(tinymt32_t * random, uint32_t init_key[],
 	i = (i + 1) % size;
     }
     period_certification(random);
+    for (i = 0; i < PRE_LOOP; i++) {
+	tinymt32_next_state(random);
+    }
 }

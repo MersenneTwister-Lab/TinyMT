@@ -141,7 +141,8 @@ bool parse_opt(tinymt_options& opt, int argc, char **argv, uint32_t start) {
 static void output_help(string& pgm, uint32_t start) {
     cerr << "usage:" << endl;
     cerr << pgm
-	 << " [-v] [-c count] [-s start_pos] [-m max-delta] [-f outputfile]"
+	 << " [-v] [-c count] [-a] [-s start_pos] [-m max-delta]"
+	 << " [-f outputfile]"
 	 << " id" << endl;
     static string help_string1 = "\n"
 "id                   ID of generator. the parameters searched with different\n"

@@ -1,6 +1,6 @@
  =================================================================
  tinymt ver. 1.0
- 2011.5.16
+ 2011.5.31
 
  Tiny Mersenne Twister(tinymt).
  Pseudo random number generators whose periods are 2^127-1.
@@ -19,11 +19,24 @@
  ドキュメントは、たとえ英語が文法的に正しくない場合でも、英語版が正式な
  ものです。
 
- doxygen によって生成されたドキュメント（英語）が、html ディレクトリの
- 下にあるので参照してください。
+ このアーカイブファイルは二種類のソースファイルを含んでいます。
+ ひとつは tinymt で、もうひとつは tinymtdc です。
 
- このプログラムは、C言語汎用で動くはずです。(c99の機能の一部を使っていますが、
- 全部が必要なわけではありません）
+ tinymt は C言語で書かれています。
+ stdint.h と inttypes.hが必要です
+ C99 をサポートしているコンパイラなら、標準インクルードパスにこの二つのヘッダ
+ ファイルが含まれています。
+ Microsoft Visual Studio 用の stdint.h と inttypes.h は Google code
+ の msinttypes から入手可能です。
+
+ tinymtdc はC++言語で書かれています。
+ C++ tr1 をサポートしているコンパイラが必要です。
+ また、stdint.h と inttypes.h も使用しています。
+ さらに、Victor Shoup 氏のライブラリ NTL が必要です。
+
+ tinymtもtinymtdcもdoxygenでドキュメントが生成できるように書かれています。
+ doxygenがなくても実行には影響がありませんが、doxygenがあれば
+ ソースファイル中の各関数について詳細なドキュメントを見ることが出来ます。
 
  ソースコードを変更したりしなかったりしてこのプログラムを再配布したい人
  は、LICENSE.txt（英語）を読んで下さい。

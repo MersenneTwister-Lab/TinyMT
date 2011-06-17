@@ -9,7 +9,7 @@
  * @author Makoto Matsumoto (University of Tokyo)
  *
  * Copyright (C) 2011 Mutsuo Saito, Makoto Matsumoto,
- * Hiroshima University and University of Tokyo.
+ * Hiroshima University and The University of Tokyo.
  * All rights reserved.
  *
  * The 3-clause BSD License is applied to this software, see

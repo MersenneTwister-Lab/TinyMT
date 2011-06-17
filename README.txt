@@ -17,7 +17,11 @@
  =================================================================
  The documents written in English is the official one.
 
- To see documents, see html/index.html.
+ To see documents, make doc and then see html/index.html.
+
+
+ And if you are using Microsoft Visual Studio, you need to
+ download msinttypes from google code.
 
  If you want to redistribute and/or change source files, see LICENSE.txt.
 

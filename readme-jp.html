@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html" />
+    <meta name="keywords" content="tiny mt" />
+    <title>Tiny Mersenne Twister (tinyMT)</title>
+    <style type="text/css">
+      TABLE.numeric TD {text-align:right}
+      DD.gray {color:gray}
+      body {margin-right:10%;margin-left:10%}
+    </style>
+  </head>
+  <body>
+    <h2>Tiny Mersenne Twister</h2>
+    <h2>READ ME FIRST</h2>
+
+    <p>
+      このアーカイブには二種類のプログラムが入っています。
+      ひとつは<strong>tinymt</strong>で、もうひとつは<strong>tinymtdc</strong>
+      です。
+      tinymt は疑似乱数生成器で、tinymtdc はtinymt用のパラメータ生成器です。
+    </p>
+
+    <h2>tinymt</h2>
+
+    <p>
+      tinymt はMersenne TwisterやWELL RNGと比べて小さな疑似乱数生成器です。
+      32bit 出力の tinymt32 は内部状態空間に16バイト、パラメータに12バイトしか使いません。
+      64bit 出力の tinymt64 は内部状態空間に16バイト、パラメータに16バイト使用します。
+      tinymt によって生成される疑似乱数列の周期は2<sup>127</sup>-1になります。
+    </p>
+
+    <ul>
+      <li>tinymtは出力のビットサイズによってtinymt32とtinymt64の二つに分けられます。
+	tinymt32は32ビット符号なし整数と単精度浮動小数点数の疑似乱数を出力します。
+	一方tinymt64は64ビット符号なし整数と倍精度浮動小数点数の疑似乱数を出力します。
+      </li>
+      <li>tinymtは特定のハードウェア向けに設計されていません。多くのハー
+      ドウェアに実装することが可能だと思います。
+      </li>
+      <li>
+	tinymtは状態遷移関数と出力関数という二つの関数によって疑似乱数を生成します。
+	状態遷移関数は特性多項式が127次で既約となるF2線形関数であり、
+	出力関数はF2線形ではないが、F2線形に近い関数です。出力関数のほとんどの演算は
+	F2線形ですが、一つの演算だけはF2線形のベクトル加算の代わりに、mod 2<sup>32</sup>
+	または、mod 2<sup>64</sup>の加算を使用しています。
+      </li>
+      <li>
+	TESTU01のBigcrushは疑似乱数に対する最も厳しいテストの一つですが、
+	状態空間が小さいにも拘らず、tinymtはBigcrushのすべてのテストに
+	合格します。
+	本当のことを言うと、これは正確な表現ではありません。正確に言うと、
+	tinymtはパラメータによって生成する疑似乱数が異なるのですが、10個の
+	パラメータについてそれぞれ10個のseedを使用してBigcrushテストを
+	行った結果パラメータとシードの組み合わせによってはいくつかのテストに
+	合格しませんでした。しかし、Bigcrushには160のテストがあるので、
+	全部で10×10×160個のテストが行われます。これだけ多くのテストを
+	実行すると、真の乱数ですらいくつかのテストには合格しないでしょう。
+	問題となるのは、特定のパラメータを使用するとseedに拘らず特定の
+	テストで不合格となる場合ですが、そのような結果はありませんでした。
+	またすべてのパラメータをテストすることも、事実上不可能です。
+	tinymtdcは2<sup>32</sup>個以上のパラメータを生成することができますから。
+      </li>
+      <li>
+	均等分布次元は、状態遷移関数と出力関数が共に線形な生成器にだけ
+	定義されるものなので、出力関数が線形でないtinymtには定義出来ま
+	せんが、もし仮に tinymt の均等分布次元が計算出来たとすると、
+	tinymt32 の32ビット符号なし整数出力の均等分布次元は 3 以下にな
+	ります。(tinymt64の64ビット符号なし整数出力の均等分布次元は1以下)
+	これは、Mersenne Twister MT19937 の 623 に比べてずっと
+	小さい値であり、疑似乱数としてよい性質を持っているとは言えませ
+	ん。
+      </li>
+      <li>
+	tinymt は Mersenne Twister に取って代わるような疑似乱数生成器で
+	はなく、メモリ上の制限などから Mersenne Twister や、その他の状
+	態空間の大きな疑似乱数生成器が使えない場合に使える、状態空間が
+	小さい割にはそこそこよい、疑似乱数生成器です。
+      </li>
+    </ul>
+    <h3>必要ライブラリ</h3>
+    <p>tinymt は C言語で書かれていて、
+      c99の stdint.h と inttypes.h を使用しています。
+    </p>
+    <ul>
+      <li>gcc は std=c99 オプションを指定することによりc99に対応します。</li>
+      <li>Visual Studio C/C++ は c99 に対応していませんが、Google Codes の
+	<a href="http://code.google.com/p/msinttypes/">msinttypes</a>に
+	Visual Studio 用のstdint.h とinttypes.hがあります。
+      </li>
+    </ul>
+
+    <h3>チェックプログラムのコンパイルとチェック</h3>
+    <ol>
+      <li><strong>tinymt</strong>にcdして</li>
+      <li><strong>make all</strong>.</li>
+      <li>check32 と check64 ができる</li>
+      <li>プログラムの動作を確認するために、
+	<blockquote>
+	check32 8f7011ee fc78ff1f 3793fdff &gt; tmp32.txt<br/>
+	diff tmp32.txt check32.out.txt<br/>
+	check64 fa051f40 ffd0fff4 58d02ffeffbfffbc &gt; tmp64.txt<br/>
+	diff tmp64.txt check64.out.txt
+	</blockquote>
+	diff で違いがなければO.K.</li>
+    </ol>
+
+    <h2>tinymtdc</h2>
+    <p>
+      Tinymtdc はtinymt用のパラメータ生成器です。tinymt は tinymtdc
+      で生成されたパラメータを使用しなければなりません。tinymtdc はユーザの
+      指定するidごとに2<sup>16</sup>個以上のパラメータを生成することが
+      できます。
+    </p>
+    <ul>
+      <li>tinymtdc には tinymt32 用のパラメータを生成する tinymt32dc と
+	tinymt64用のパラメータを生成するtinymt64dcがあります。
+      </li>
+      <li>tinymtdc はユーザの指定したid毎に指定した個数のパラメータを生成します。
+	ひとつのidについて生成可能なパラメータの数は2<sup>28</sup>以下になると
+	思います。</li>
+      <li>tinymtdc の生成するパラメータによるtinymtの特性多項式は、idが異なれば
+	異なる特性多項式になることが保証されています。
+      </li>
+    </ul>
+
+    <h3>必要ライブラリ</h3>
+    <p>tinymtdc はC++で書かれていて、テンプレート機能を使用しています。
+    </p>
+    <ul>
+      <li>Victor Shoup's <a href="http://shoup.net/ntl/">
+	  NTL: A Library for doing Number Theory</a>.</li>
+      <li>C++ TR1 ライブラリ。g++ は ver. 4.0 以降、
+	Visual C++ は 2010 以降、または2008に Feature Packを入れる。
+	Intel C/C++ Compiler 少なくとも ver. 11.0 以降は対応している</li>
+      <li>（しかし、gcc 4.2.1 と icc ver. 11.1 でしかテストしていません） </li>
+    </ul>
+
+
+    <h3>コンパイル</h3>
+    <ol>
+      <li><strong>dc/src</strong>に cd して</li>
+      <li><strong>make all</strong></li>
+      <li>tinymt32dc, tinym64dc, getid が作られる</li>
+    </ol>
+
+    <h3>プログラムと使用方法</h3>
+    <dl>
+      <dt>
+	tinymt32dc [-v] [-c count] [-s seed_string] [-f outputfile] ID<br/>
+	tinymt64dc [-v] [-c count] [-s seed_string] [-f outputfile] ID
+      </dt>
+      <dd>この二つのプログラムはそれぞれ tinymt32 と tinymt64 用のパラメータを生成します。
+	<ul>
+	  <li>引数（必須）<br/>
+	    <dl>
+	      <dt>ID</dt>
+	      <dd>ID は次の条件を満たす10進数で指定してください。
+		0 &lt;= ID &lt; 2<sup>32</sup><br/>
+		tinymtdc では id が異なれば生成されたパラメータを使った疑似乱数の
+		（状態遷移の）特性多項式も異なることが保証されています。
+	      </dd>
+	    </dl>
+	  </li>
+	  <li>引数（任意）<br/>
+	    <dl>
+	      <dt>-v</dt>
+	      <dd>デバッグ用の詳細出力モードを指定します。使用しないでください。</dd>
+	      <dt>-c count</dt>
+	      <dd>出力するパラメータセットの数を指定します。
+		省略すると1個だけ出力します。IDは変更されません。
+		内部カウンタを更新してパラメータを生成します。
+		IDまたは内部カウンタが異なれば特性多項式が異なることが
+		保証されています。</dd>
+	      <dt>-a</dt>
+	      <dd>可能な限り多くのパラメータセットを出力します。
+		-a が指定されると -c の指定を無視します。</dd>
+	      <dt>-s seq</dt>
+	      <dd>内部カウンタの初期値をセットします。
+		省略すると最大値がセットされます。</dd>
+	      <dt>-m 評価値</dt>
+	      <dd>tinymtdcの評価値であるtotal dimension defect の値が
+		この値以下のパラメータセットだけが出力されるようになります。
+		省略すると評価値による出力抑制は行われません。
+		0 を指定すると最良の評価値のものだけが出力されます。
+		なお、この評価値は内部評価のためのものであり、このパラメータセット
+		を使用した疑似乱数列の均等分布を示すものではありません。
+		（出力関数がF<sub>2</sub>線形でないので）</dd>
+	      <dt>-f filename</dt>
+	      <dd>出力ファイル名を指定します。省略すると標準出力に結果が表示されます。
+	      </dd>
+	    </dl>
+	  </li>
+	</ul>
+      </dd>
+      <dt>getid -b 32|64 mat1 mat2 <br/>
+	getid -b 32|64 -r id seq </dt>
+      <dd>このプログラムはtinymt のパラメータセットからidと内部カウンタを計算します。
+	-r が指定されると逆に、id と内部カウンタからパラメータのmat1 と mat2 を
+	計算します。<br/>
+	tinymtdc の出力の最後の行のmat1 と mat2 を引数にして、gitid を実行し
+	得られた seq の値から１を引いて tinymtdc の -s パラメータに指定する
+	ことによって、中断したパラメータ生成を続行することが出来ます。
+	</dd>
+    </dl>
+
+    <h3>tinymtdc の出力形式</h3>
+    <p>tinymtdc は CSV形式の出力をします。ここでは出力形式の説明をします。
+    </p>
+    <table border="1">
+      <tr>
+	<th>Column or Row</th><th>Description</th>
+      </tr>
+      <tr>
+	<td>The first row</td>
+	<td>
+	  <pre># charactristic, type, id, mat1, mat2, tmat1, weight, delta</pre>
+	  最初の行は常にこのとおりの出力をします。
+	この行は以下の出力の各カラムのタイトルになっています。</td>
+      </tr>
+      <tr>
+	<td>1st column charactristic</td>
+	<td>第１カラムは特性多項式を示しています。この特性多項式は0と1を係数とする
+	  127次の既約多項式です。最高次の係数が最初にくるように（つまり降べきの順に）
+	  16進数で表示しています。127次の多項式は128個の係数を持つので最初の16進数は
+	  8以上の数になっています。また既約であることから、
+	  最後の16進数は奇数になっています。
+	</td>
+      </tr>
+      <tr>
+	<td>2nd column type</td>
+	<td>第2カラムはこのパラメータセットが32bit版tinymt用か、64bit版用かを示しています。
+	</td>
+      </tr>
+      <tr>
+	<td>3rd column id</td>
+	<td>第3カラムはユーザーが指定したIDを出力しています。
+	</td>
+      </tr>
+      <tr>
+	<td>4th column mat1</td>
+	<td>第4カラムはmat1 パラメータを示しています。このカラムは16進数で表示されています。
+	</td>
+      </tr>
+      <tr>
+	<td>5th column mat2</td>
+	<td>第5カラムはmat2 パラメータを示しています。このカラムは16進数で表示されています。
+	</td>
+      </tr>
+      <tr>
+	<td>6th columns tmat</td>
+	<td>第6カラムは tmat パラメータを示しています。このカラムは16進数で表示されています。
+	</td>
+      </tr>
+      <tr>
+	<td>7th column weight</td>
+	<td>第7カラムは特性多項式のハミングウェイトを示しています。項数128の半分の64程度から
+	  大きく離れていないことが望ましいと言われています。
+	</td>
+      </tr>
+      <tr>
+	<td>8th delta</td>
+	<td>第8カラムはtinymtdcの内部評価値 total dimension defectを示しています。
+	  0 が最もよい内部評価値となります。この値が小さくなるように tmat を選んでいます。
+	</td>
+      </tr>
+    </table>
+
+    <h2>LICENSE</h2>
+    <pre>
+Copyright (c) 2011 Mutsuo Saito, Makoto Matsumoto, Hiroshima
+University and The University of Tokyo. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of the Hiroshima University nor the names of
+      its contributors may be used to endorse or promote products
+      derived from this software without specific prior written
+      permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+    </pre>
+  </body>
+</html>

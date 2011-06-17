@@ -78,7 +78,7 @@ namespace tinymt {
 	 * @return header line of output.
 	 */
 	string get_header() {
-	    return "id, mat1, mat2, tmat1";
+	    return "id, mat1, mat2, tmat";
 	};
 
 	/**
