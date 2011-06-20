@@ -1,7 +1,11 @@
 #for GNU make
 
 #DDEBUG = -O0 -g -ggdb -DDEBUG=1
-OPTLIB = -lgf2x
+
+# uncomment next line if you installed NTL with gf2x or gmp
+#OPTLIB = -lgf2x
+#OPTLIB = -lgmp
+
 INC = -I../include
 
 CC = gcc -Wall -O3 -std=c99 -Wmissing-prototypes -Wextra $(DDEBUG)

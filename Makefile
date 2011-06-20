@@ -44,7 +44,7 @@ tar.gz: $(FILES)
 	mkdir ${DIR}/dc/include
 	mkdir ${DIR}/dc/src
 	(cd dc; cp -r include ../${DIR}/dc)
-	(cd dc/src; cp ${DC_FILES} ../${DIR}/dc/src)
+	(cd dc/src; cp ${DC_FILES} ../../${DIR}/dc/src)
 	mkdir ${DIR}/tinymt
 	(cd tinymt; cp ${TINYMT_FILES} ../${DIR}/tinymt)
 	tar czvf ${DIR}.tar.gz ${DIR}/*
@@ -53,13 +53,12 @@ tar.gz: $(FILES)
 .PHONY : zip
 zip: $(FILES)
 	mkdir ${DIR}
-	rm ${DIR}.zip
 	cp ${FILES} ${DIR}
 	mkdir ${DIR}/dc
 	mkdir ${DIR}/dc/include
 	mkdir ${DIR}/dc/src
 	(cd dc; cp -r include ../${DIR}/dc)
-	(cd dc/src; cp ${DC_FILES} ../${DIR}/dc/src)
+	(cd dc/src; cp ${DC_FILES} ../../${DIR}/dc/src)
 	mkdir ${DIR}/tinymt
 	(cd tinymt; cp ${TINYMT_FILES} ../${DIR}/tinymt)
 	zip -r ${DIR}.zip ${DIR}/*
