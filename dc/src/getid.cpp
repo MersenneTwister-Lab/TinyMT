@@ -196,7 +196,7 @@ void calc_id32(uint32_t *id, uint32_t *seq, uint32_t mat1, uint32_t mat2) {
     work >>= 1;
     work = unshiftxor_left<uint32_t>(work, 15);
     work = unshiftxor_left<uint32_t>(work, 23);
-    *seq = work;
+    *seq = work & 0x7fffffff;
 }
 
 /**
