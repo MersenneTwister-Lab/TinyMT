@@ -56,6 +56,7 @@ bool parse_opt(tinymt_options& opt, int argc, char **argv, uint32_t start) {
     opt.max_delta = 10;
     opt.start = start;
     opt.all = false;
+    errno = 0;
     for (;;) {
 	c = getopt_long(argc, argv, "vas:m:f:c:", longopts, NULL);
 	if (error) {

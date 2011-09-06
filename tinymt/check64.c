@@ -27,7 +27,7 @@ int main(int argc, char * argv[]) {
     tinymt64_t tinymt;
     tinymt.mat1 = strtoul(argv[1], NULL, 16);
     tinymt.mat2 = strtoul(argv[2], NULL, 16);
-    tinymt.tmat = strtoul(argv[3], NULL, 16);
+    tinymt.tmat = strtoull(argv[3], NULL, 16);
     int seed = 1;
     uint64_t seed_array[5];
     if (argc >= 5) {
