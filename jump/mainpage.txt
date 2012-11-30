@@ -1,0 +1,35 @@
+/**
+ * \mainpage
+ *
+ * This is status jump program for Tiny Mersenne Twister.
+ *
+ * Jump means changing internal state vector to n steps
+ * after current state without generating numbers.
+ *
+ * The following function are available.
+ * - calculate_jump_polynomial(): calculate jump polynomial from jump step
+ * and characteristic polynomial. This function can be used for 32-bit and
+ * 64-bit tinymt. This function is time consuming.
+ * - tinymt32_jump_by_polynomial(): actual jump using jump polynomial for
+ * tinymt32. This function is not as time consuming as calculating jump
+ * polynomial.
+ * - tinymt64_jump_by_polynomial(): actual jump using jump polynomial for
+ * tinymt64. This function is not as time consuming as calculating jump
+ * polynomial.
+ * - tinymt32_jump():This function calculates jump polynomial and jumps
+ * using the polynomial.
+ * - tinymt64_jump(): This function calculates jump polynomial and jumps
+ * using the polynomial.
+ *
+ * @author Mutsuo Saito, (saito@math.sci.hiroshima-u.ac.jp) Hiroshima University
+ * @author Makoto Matsumoto, The University of Tokyo
+ *
+ * @date 2012-4-10
+ *
+ * Copyright (C) 2011,2012 Mutsuo Saito, Makoto Matsumoto, Hiroshima
+ * University and The University of Tokyo.
+ * All rights reserved.
+ *
+ * The 3-clause BSD License is applied to this software.
+ * \verbinclude LICENSE.txt
+ */

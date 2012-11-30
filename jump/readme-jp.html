@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html" />
+    <meta name="keywords" content="tiny mt" />
+    <title>TinyMT Jump Function</title>
+    <style type="text/css">
+      TABLE.numeric TD {text-align:right}
+      DD.gray {color:gray}
+      body {margin-right:10%;margin-left:10%}
+    </style>
+  </head>
+  <body>
+    <h2>TinyMT Jump Function</h2>
+    <h2>READ ME FIRST</h2>
+
+    <p>
+      Jump 関数は疑似乱数生成器 TinyMT の内部状態をN個先にジャンプさせます。
+      Nが大きい場合、このジャンプはN個の疑似乱数を生成するよりもずっと速く実行出来ます。
+      Jump 関数を使用することによって、疑似乱数の出力の中から重複しない部分列を得ること
+      ができます。
+    </p>
+    <p>Jump 関数はC言語で書かれていて、標準ライブラリ以外のライブラリを使用していません。
+      ただし、c99 の stdint.h と inttypes.h を使用しています。
+    </p>
+
+    <h2>TinyMTを用いて疑似乱数列を並列に生成する方法の比較</h2>
+    <ol>
+      <li>パラメータを一つ使用し、seedを変えることによって複数の疑似乱
+	数列を得る方法。この方法によって得られた数列は一つの疑似乱数列
+	の部分数列ですが、それぞれの部分数列が他の部分数列とどれだけ離
+	れているかを知ることは難しい。最悪の場合、疑似乱数列が重複する
+	可能性があります。ただし、重複する可能性は通常無視出来るほど小
+	さいと考えられます。一方、同一のパラメータを使用することから、
+	マルチスレッドのようなメモリ共有並列モデルでは、パラメータを定
+	数にすることができます。
+      </li>
+      <li>パラメータを一つ使用し、jumpによって、複数の疑似乱数列を得る
+	方法。この方法によって得られる数列も一つの疑似乱数列の部分数列
+	ですが、それがお互いにどのくらい離れているかは、分かっています。
+	つまり、jump で指定した値だけ離れています。<!-- この方法で得られる数
+	列は、同じパラメータセットから作られるので、特定のビットの間に
+	線形関係が存在するかも知れません。そのような線形関係はモンテ
+	カルロ・シミュレーションの結果に影響するかも知れないし、影響し
+	ないかも知れません。-->マルチスレッドなどのメモリ共有並列モデルで
+	は、パラメータを定数にすることができます。
+      </li>
+      <li>個々の疑似乱数列に異なるパラメータを使用して、複数の疑似乱数列を得る方法。
+	三つの方法の中で、各疑似乱数列の独立性が最も高いと考えられます。
+	パラメータを定数にすることが出来ないのでメモリ消費量が増えます。</li>
+    </ol>
+    <p>このjump関数は二番目の方法を提供します。ただし、メモリを節約するプログラムは
+      用意していないので、メモリを節約したければ、ユーザー自身で構造体を書き換え、
+    パラメータを定数として定義する必要があります。</p>
+
+    <h2>使用方法</h2>
+    <h3>テストプログラムのコンパイル</h3>
+    <p>
+      Jump プログラムは単独ではコンパイルできません。TinyMT のソースファイルが
+      必要です。また、実行にはTinyMTDCの出力パラメータが必要です。</p>
+    <ol>
+      <li>アーカイブファイルを解凍します。</li>
+      <li>出来たディレクトリ(TinyMTJump-src-xxx)の中のjumpディレクトリを
+	TinyMTのディクレクトリにコピーします。</li>
+<pre>
+TinyMT-src-xxx
+   +---dc
+   +---tinymt
+   +---jump
+</pre>
+       <li>コピーしたjumpディレクトリにcd します。</li>
+       <li>make all でテスト用のプログラムがコンパイルされます。</li>
+       <li><b>./jump_test32 d8524022ed8dff4a8dcc50c798faba43 8f7011ee fc78ff1f 3793fdff 1298</b></li>
+       <li>OK が表示されていることと、NGが表示されていないことを確認します。</li>
+    </ol>
+
+    <h3>関数の説明</h3>
+<pre>
+void tinymt32_jump(tinymt32c_t *tiny,
+                   uint64_t lower_step,
+                   uint64_t upper_step,
+                   const char * poly_str);
+</pre>
+    <dl>
+      <dt>この関数はtinymt32の内部状態をlower_step と upper_step で表される
+      0から2<sup>128</sup>-1の範囲内の任意のステップ先にジャンプさせます。
+      </dt>
+      <dd>tiny は状態をjumpさせるtinymt32_t 型の構造体です。
+	  tiny は初期化をしてある必要があります。jump 後の状態で上書きされます。</dd>
+      <dd>lower_step と upper_step は何個先の状態にjumpするかを示します。</dd>
+      <dd>poly_str は tinymt32dc の出力のパラメータセットの中のcharacteristic
+	カラムを文字列として渡します。</dd>
+    </dl>
+<pre>
+void calculate_jump_polynomial(f2_polynomial *jump_poly,
+                               uint64_t lower_step,
+                               uint64_t upper_step,
+                               const char * poly_str);
+</pre>
+    <dl>
+      <dt>この関数は、特性多項式とlower_step, upper_stepからジャンプ多項式を計算します。
+	この関数の実行にはやや時間がかかります。ジャンプ多項式を一度求めたら、それを複数回
+	使用するとよいでしょう。ただし、特性多項式が異なる場合は、ジャンプ多項式を計算し
+	なおす必要があります。
+      </dt>
+      <dd>jump_poly には計算結果のジャンプ多項式が入ります。</dd>
+      <dd>lower_step と upper_step は何個先の状態にjumpするかを示します。</dd>
+      <dd>poly_str は tinymt32dc の出力のパラメータセットの中のcharacteristic
+	カラムを文字列として渡します。</dd>
+    </dl>
+
+<pre>
+void tinymt32_jump_by_polynomial(tinymt32_t *tiny,
+				 f2_polynomial * jump_poly);
+</pre>
+    <dl>
+      <dt>この関数は計算済みのジャンプ多項式を使って、tinymt32の内部状態をジャンプさせます。
+	ジャンプ多項式の計算よりもこの関数によるジャンプの方が速いので、多項式を何度も
+	計算するよりこの関数を複数回実行した方が速くなります。
+      </dt>
+      <dd>tiny は状態をjumpさせるtinymt32_t 型の構造体です。
+	  tiny は初期化をしてある必要があります。jump 後の状態で上書きされます。</dd>
+      <dd>jump_polyはcalculate_jump_polynomial関数で計算したジャンプ多項式です。
+	ここで使用するtinyの特性多項式を使って計算したジャンプ多項式でなければなりません。
+      </dd>
+    </dl>
+
+    <h3>サンプルプログラム</h3>
+    <p>サンプルプログラム<a href="sample.c">sample.c</a>を挙げておきます。</p>
+  </body>
+</html>

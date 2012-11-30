@@ -26,6 +26,10 @@
 #define TINYMT32_MASK UINT32_C(0x7fffffff)
 #define TINYMT32_MUL (1.0f / 4294967296.0f)
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 /**
  * tinymt32 internal state vector and parameters
  */
@@ -235,4 +239,9 @@ inline static double tinymt32_generate_32double(tinymt32_t * random) {
     tinymt32_next_state(random);
     return tinymt32_temper(random) * (1.0 / 4294967296.0);
 }
+
+#if defined(__cplusplus)
+}
+#endif
+
 #endif
