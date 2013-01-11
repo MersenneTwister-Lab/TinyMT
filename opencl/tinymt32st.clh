@@ -1,0 +1,141 @@
+/** -*- c -*-
+ * @file tinymt32st.cl
+ *
+ * @brief Sample Program for openCL 1.1
+ *
+ * tinymt32 (pattern H)
+ * This program generates 32-bit unsigned integers.
+ * The period of generated integers is 2<sup>127</sup>-1.
+ *
+ * This also generates single precision floating point numbers
+ * uniformly distributed in the range [1, 2). (float r; 1.0 <= r < 2.0)
+ *
+ * @author Mutsuo Saito (Hiroshima University)
+ * @author Makoto Matsumoto (The University of Tokyo)
+ *
+ * Copyright (C) 2010 Mutsuo Saito, Makoto Matsumoto,
+ * Hiroshima University and The University of Tokyo.
+ * All rights reserved.
+ *
+ * The new BSD License is applied to this software, see LICENSE.txt
+ */
+
+#define TINYMT32_SHIFT0 1
+#define TINYMT32_SHIFT1 10
+#define TINYMT32_MIN_LOOP 8
+#define TINYMT32_PRE_LOOP 8
+#define TINYMT32_MASK 0x7fffffffU
+#define TINYMT32_SINGLE_MASK 0x3f800000U
+
+typedef struct {
+    uint status[4];
+    uint mat1;
+    uint mat2;
+    uint tmat;
+} tinymt32_t;
+
+/**
+ * The function of the recursion formula calculation.
+ *
+ */
+inline static void tinymt32_next(tinymt32_t * tiny)
+{
+    uint x = (tiny->status[0] & TINYMT32_MASK)
+	^ tiny->status[1] ^ tiny->status[2];
+    uint y = tiny->status[3];
+    x ^= x << TINYMT32_SHIFT0;
+    y ^= (y >> TINYMT32_SHIFT0) ^ x;
+    tiny->status[0] = tiny->status[1];
+    tiny->status[1] = tiny->status[2];
+    tiny->status[2] = x ^ (y << TINYMT32_SHIFT1);
+    tiny->status[3] = y;
+    if (y & 1) {
+	tiny->status[1] ^= tiny->mat1;
+	tiny->status[2] ^= tiny->mat2;
+    }
+}
+
+/**
+ * The function of the recursion formula calculation.
+ *
+ */
+inline static uint tinymt32_temper(tinymt32_t * tiny)
+{
+    uint t0, t1;
+    t0 = tiny->status[3];
+    t1 = tiny->status[0] + (tiny->status[2] >> 8);
+    t0 ^= t1;
+    if (t1 & 1) {
+	t0 ^= tiny->tmat;
+    }
+    return t0;
+}
+
+/**
+ * The function of the recursion formula calculation.
+ *
+ */
+inline static uint tinymt32_uint32(tinymt32_t * tiny)
+{
+    tinymt32_next(tiny);
+    return tinymt32_temper(tiny);
+}
+
+/**
+ * The function of the recursion formula calculation.
+ *
+ */
+inline static float tinymt32_single12(tinymt32_t * tiny)
+{
+    tinymt32_next(tiny);
+    uint t0, t1;
+    t0 = tiny->status[3];
+    t1 = tiny->status[0] + (tiny->status[2] >> 8);
+    t0 ^= t1;
+    if (t1 & 1) {
+	t0 = (t0 >> 9) ^ tiny->tmat;
+    } else {
+	t0 = (t0 >> 9) ^ TINYMT32_SINGLE_MASK;
+    }
+    return as_float(t0);
+}
+
+inline static float tinymt32_single(tinymt32_t * tiny)
+{
+    return tinymt32_single(tiny) - 1.0f;
+}
+
+/**
+ * kernel function.
+ * This function generates 32-bit unsigned integers in d_data
+ *
+ * @param[in,out] d_status kernel I/O data
+ * @param[out] d_data output
+ * @param[in] size number of output data requested.
+ */
+
+inline static void tinymt32_init(tinymt32_t * tiny, uint seed) {
+    tiny->status[0] = seed;
+    tiny->status[1] = tiny->mat1;
+    tiny->status[2] = tiny->mat2;
+    tiny->status[3] = tiny->tmat;
+    for (int i = 1; i < TINYMT32_MIN_LOOP; i++) {
+	tiny->status[i % 4] ^= i + 1812433253U *
+	    (tiny->status[(i - 1) % 4]
+	     ^ (tiny->status[(i - 1) % 4] >> 30));
+    }
+    if ((tiny->status[0] & tinymt32_mask) == 0 &&
+	tiny->status[1] == 0 &&
+	tiny->status[2] == 0 &&
+	tiny->status[3] == 0) {
+	tiny->status[0] = 'T';
+	tiny->status[1] = 'I';
+	tiny->status[2] = 'N';
+	tiny->status[3] = 'Y';
+    }
+    for (int i = 0; i < tinymt32_pre_loop; i++) {
+	tinymt32_next(tiny);
+    }
+}
+
+

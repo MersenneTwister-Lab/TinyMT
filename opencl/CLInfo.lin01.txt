@@ -1,0 +1,127 @@
+Number of platforms:				 1
+  Platform Profile:				 FULL_PROFILE
+  Platform Version:				 OpenCL 1.1 ATI-Stream-v2.2 (302)
+  Platform Name:					 ATI Stream
+  Platform Vendor:				 Advanced Micro Devices, Inc.
+  Platform Extensions:			 cl_khr_icd cl_amd_event_callback
+
+
+  Platform Name:					 ATI Stream
+Number of devices:				 2
+  Device Type:					 CL_DEVICE_TYPE_CPU
+  Device ID:					 4098
+  Max compute units:				 3
+  Max work items dimensions:			 3
+    Max work items[0]:				 1024
+    Max work items[1]:				 1024
+    Max work items[2]:				 1024
+  Max work group size:				 1024
+  Preferred vector width char:			 16
+  Preferred vector width short:			 8
+  Preferred vector width int:			 4
+  Preferred vector width long:			 2
+  Preferred vector width float:			 4
+  Preferred vector width double:		 0
+  Max clock frequency:				 800Mhz
+  Address bits:					 32
+  Max memory allocation:			 536870912
+  Image support:				 No
+  Max size of kernel argument:			 4096
+  Alignment (bits) of base address:		 1024
+  Minimum alignment (bytes) for any datatype:	 128
+  Single precision floating point capability
+    Denorms:					 Yes
+    Quiet NaNs:					 Yes
+    Round to nearest even:			 Yes
+    Round to zero:				 Yes
+    Round to +ve and infinity:			 Yes
+    IEEE754-2008 fused multiply-add:		 No
+  Cache type:					 Read/Write
+  Cache line size:				 64
+  Cache size:					 65536
+  Global memory size:				 1073741824
+  Constant buffer size:				 65536
+  Max number of constant args:			 8
+  Local memory type:				 Global
+  Local memory size:				 32768
+  Profiling timer resolution:			 1
+  Device endianess:				 Little
+  Available:					 Yes
+  Compiler available:				 Yes
+  Execution capabilities:				 
+    Execute OpenCL kernels:			 Yes
+    Execute native function:			 Yes
+  Queue properties:				 
+    Out-of-Order:				 No
+    Profiling :					 Yes
+  Platform ID:					 0xb7435dc0
+  Name:						 AMD Phenom(tm) II X3 705e Processor
+  Vendor:					 AuthenticAMD
+  Driver version:				 2.0
+  Profile:					 FULL_PROFILE
+  Version:					 OpenCL 1.1 ATI-Stream-v2.2 (302)
+  Extensions:					 cl_amd_fp64 cl_khr_global_int32_base_atomics cl_khr_global_int32_extended_atomics cl_khr_local_int32_base_atomics cl_khr_local_int32_extended_atomics cl_khr_byte_addressable_store cl_khr_gl_sharing cl_ext_device_fission cl_amd_device_attribute_query cl_amd_printf 
+  Device Type:					 CL_DEVICE_TYPE_GPU
+  Device ID:					 4098
+  Max compute units:				 9
+  Max work items dimensions:			 3
+    Max work items[0]:				 256
+    Max work items[1]:				 256
+    Max work items[2]:				 256
+  Max work group size:				 256
+  Preferred vector width char:			 16
+  Preferred vector width short:			 8
+  Preferred vector width int:			 4
+  Preferred vector width long:			 2
+  Preferred vector width float:			 4
+  Preferred vector width double:		 0
+  Max clock frequency:				 0Mhz
+  Address bits:					 32
+  Max memory allocation:			 134217728
+  Image support:				 Yes
+  Max number of images read arguments:	 128
+  Max number of images write arguments:	 8
+  Max image 2D width:			 8192
+  Max image 2D height:			 8192
+  Max image 3D width:			 2048
+  Max image 3D height:	 2048
+  Max image 3D depth:			 2048
+  Max samplers within kernel:		 16
+  Max size of kernel argument:			 1024
+  Alignment (bits) of base address:		 32768
+  Minimum alignment (bytes) for any datatype:	 128
+  Single precision floating point capability
+    Denorms:					 No
+    Quiet NaNs:					 Yes
+    Round to nearest even:			 Yes
+    Round to zero:				 Yes
+    Round to +ve and infinity:			 Yes
+    IEEE754-2008 fused multiply-add:		 Yes
+  Cache type:					 None
+  Cache line size:				 0
+  Cache size:					 0
+  Global memory size:				 536870912
+  Constant buffer size:				 65536
+  Max number of constant args:			 8
+  Local memory type:				 Scratchpad
+  Local memory size:				 32768
+  Profiling timer resolution:			 1
+  Device endianess:				 Little
+  Available:					 Yes
+  Compiler available:				 Yes
+  Execution capabilities:				 
+    Execute OpenCL kernels:			 Yes
+    Execute native function:			 No
+  Queue properties:				 
+    Out-of-Order:				 No
+    Profiling :					 Yes
+  Platform ID:					 0xb7435dc0
+  Name:						 Juniper
+  Vendor:					 Advanced Micro Devices, Inc.
+  Driver version:				 CAL 1.4.815
+  Profile:					 FULL_PROFILE
+  Version:					 OpenCL 1.1 ATI-Stream-v2.2 (302)
+  Extensions:					 cl_khr_global_int32_base_atomics cl_khr_global_int32_extended_atomics cl_khr_local_int32_base_atomics cl_khr_local_int32_extended_atomics cl_khr_3d_image_writes cl_khr_byte_addressable_store cl_khr_gl_sharing cl_amd_device_attribute_query cl_amd_printf cl_amd_media_ops 
+
+
+Passed!

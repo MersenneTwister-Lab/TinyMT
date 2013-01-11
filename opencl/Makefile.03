@@ -1,0 +1,11 @@
+openclinc = -I ${HOME}/NVIDIA_GPU_Computing_SDK/OpenCL/common/inc
+opencllib = -I ${HOME}/NVIDIA_GPU_Computing_SDK/OpenCL/common/lib/Linux64
+CC = g++ ${openclinc} ${opencllib} -lOpenCL
+# for apple osx
+#CC = g++ -framework opencl -ggdb
+
+tinymt32: tinymt32.cpp parse_opt.o file_reader.o toolbox.hpp
+	${CC} -o $@ tinymt32.cpp parse_opt.o file_reader.o
+
+clean:
+	rm -f *.o *~

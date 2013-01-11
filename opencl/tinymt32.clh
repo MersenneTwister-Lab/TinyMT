@@ -1,0 +1,299 @@
+#ifndef TINYMT32_CLH
+#define TINYMT32_CLH
+/**
+ * @file tinymt32.clh
+ *
+ * @brief Sample Program for openCL 1.2
+ *
+ * tinymt32
+ * This program generates 32-bit unsigned integers.
+ * The period of generated integers is 2<sup>127</sup>-1.
+ *
+ * This also generates single precision floating point numbers
+ * uniformly distributed in the range [1, 2). (float r; 1.0 <= r < 2.0)
+ *
+ * @author Mutsuo Saito (Hiroshima University)
+ * @author Makoto Matsumoto (The University of Tokyo)
+ *
+ * Copyright (C) 2012 Mutsuo Saito, Makoto Matsumoto,
+ * Hiroshima University and The University of Tokyo.
+ * All rights reserved.
+ *
+ * The new BSD License is applied to this software, see LICENSE.txt
+ */
+#include "tinymt.clh"
+#include "tinymt32def.h"
+
+#define TINYMT32_SHIFT0 1
+#define TINYMT32_SHIFT1 10
+#define TINYMT32_MIN_LOOP 8
+#define TINYMT32_PRE_LOOP 8
+
+__constant uint tinymt32_mask = 0x7fffffff;
+__constant uint tinymt32_float_mask = 0x3f800000;
+
+/**
+ * The function of the recursion formula calculation.
+ *
+ */
+inline static uint
+tinymt32_uint32(tinymt32wp_t * tiny)
+{
+    uint x = (tiny->s0 & tinymt32_mask) ^ tiny->s1 ^ tiny->s2;
+    uint y = tiny->s3;
+    uint t0, t1;
+    x ^= x << TINYMT32_SHIFT0;
+    y ^= (y >> TINYMT32_SHIFT0) ^ x;
+    tiny->s0 = tiny->s1;
+    tiny->s1 = tiny->s2;
+    tiny->s2 = x ^ (y << TINYMT32_SHIFT1);
+    tiny->s3 = y;
+    if (y & 1) {
+	tiny->s1 ^= tiny->mat1;
+	tiny->s2 ^= tiny->mat2;
+    }
+    t0 = tiny->s3;
+    t1 = tiny->s0 + (tiny->s2 >> 8);
+    t0 ^= t1;
+    if (t1 & 1) {
+	t0 ^= tiny->tmat;
+    }
+    return t0;
+}
+
+/**
+ * The function of the recursion formula calculation.
+ *
+ */
+inline static float
+tinymt32_single12(tinymt32wp_t * tiny)
+{
+    uint x = (tiny->s0 & tinymt32_mask) ^ tiny->s1 ^ tiny->s2;
+    uint y = tiny->s3;
+    uint t0, t1;
+    x ^= x << TINYMT32_SHIFT0;
+    y ^= (y >> TINYMT32_SHIFT0) ^ x;
+    tiny->s0 = tiny->s1;
+    tiny->s1 = tiny->s2;
+    tiny->s2 = x ^ (y << TINYMT32_SHIFT1);
+    tiny->s3 = y;
+    if (y & 1) {
+	tiny->s1 ^= tiny->mat1;
+	tiny->s2 ^= tiny->mat2;
+    }
+    t0 = tiny->s3;
+    t1 = tiny->s0 + (tiny->s2 >> 8);
+    t0 ^= t1;
+    if (t1 & 1) {
+	t0 = t0 ^ tiny->tmat;
+    }
+    t0 = (t0 >> 9) ^ tinymt32_float_mask;
+    return as_float(t0);
+}
+
+/**
+ * The function of the recursion formula calculation.
+ *
+ */
+inline static float
+tinymt32_single01(tinymt32wp_t * tiny)
+{
+    return tinymt32_single12(tiny) - 1.0f;
+}
+
+/**
+ * Internal function
+ * This function represents a function used in the initialization
+ * by init_by_array
+ * @param x 32-bit integer
+ * @return 32-bit integer
+ */
+inline static uint
+tinymt32_ini_func1(uint x)
+{
+    return (x ^ (x >> 27)) * 1664525U;
+}
+
+/**
+ * Internal function
+ * This function represents a function used in the initialization
+ * by init_by_array
+ * @param x 32-bit integer
+ * @return 32-bit integer
+ */
+inline static uint
+tinymt32_ini_func2(uint x)
+{
+    return (x ^ (x >> 27)) * 1566083941U;
+}
+
+/**
+ * Internal function.
+ * This function certificate the period of 2^127-1.
+ * @param tiny tinymt state vector.
+ */
+inline static void
+tinymt32_period_certification(tinymt32wp_t * tiny)
+{
+    if ((tiny->s0 & tinymt32_mask) == 0 &&
+        tiny->s1 == 0 &&
+        tiny->s2 == 0 &&
+        tiny->s3 == 0) {
+        tiny->s0 = 'T';
+        tiny->s1 = 'I';
+        tiny->s2 = 'N';
+        tiny->s3 = 'Y';
+    }
+}
+
+/**
+ * This function initializes the internal state array with a 32-bit
+ * unsigned integer seed.
+ * @param tiny tinymt state vector.
+ * @param seed a 32-bit unsigned integer used as a seed.
+ */
+inline static void
+tinymt32_init(tinymt32wp_t * tiny, uint seed)
+{
+    uint status[4];
+    status[0] = seed;
+    status[1] = tiny->mat1;
+    status[2] = tiny->mat2;
+    status[3] = tiny->tmat;
+    for (int i = 1; i < TINYMT32_MIN_LOOP; i++) {
+        status[i & 3] ^= i + 1812433253U
+            * (status[(i - 1) & 3]
+               ^ (status[(i - 1) & 3] >> 30));
+    }
+    tiny->s0 = status[0];
+    tiny->s1 = status[1];
+    tiny->s2 = status[2];
+    tiny->s3 = status[3];
+    tinymt32_period_certification(tiny);
+    for (int i = 0; i < TINYMT32_PRE_LOOP; i++) {
+        tinymt32_uint32(tiny);
+    }
+}
+
+/**
+ * This function initializes the internal state array,
+ * with an array of 32-bit unsigned integers used as seeds
+ * @param tinymt tinymt state vector.
+ * @param init_key the array of 32-bit integers, used as a seed.
+ * @param key_length the length of init_key.
+ */
+inline static void
+tinymt32_init_by_array(tinymt32wp_t * tiny,
+		       uint init_key[],
+		       int key_length)
+{
+    const int lag = 1;
+    const int mid = 1;
+    const int size = 4;
+    int i, j;
+    int count;
+    uint r;
+    uint st[4];
+
+    st[0] = 0;
+    st[1] = tiny->mat1;
+    st[2] = tiny->mat2;
+    st[3] = tiny->tmat;
+    if (key_length + 1 > TINYMT32_MIN_LOOP) {
+	count = key_length + 1;
+    } else {
+	count = TINYMT32_MIN_LOOP;
+    }
+    r = tinymt32_ini_func1(st[0] ^ st[mid % size]
+			   ^ st[(size - 1) % size]);
+    st[mid % size] += r;
+    r += key_length;
+    st[(mid + lag) % size] += r;
+    st[0] = r;
+    count--;
+    for (i = 1, j = 0; (j < count) && (j < key_length); j++) {
+	r = tinymt32_ini_func1(st[i % size]
+			       ^ st[(i + mid) % size]
+			       ^ st[(i + size - 1) % size]);
+	st[(i + mid) % size] += r;
+	r += init_key[j] + i;
+	st[(i + mid + lag) % size] += r;
+	st[i % size] = r;
+	i = (i + 1) % size;
+    }
+    for (; j < count; j++) {
+	r = tinymt32_ini_func1(st[i % size]
+		      ^ st[(i + mid) % size]
+		      ^ st[(i + size - 1) % size]);
+	st[(i + mid) % size] += r;
+	r += i;
+	st[(i + mid + lag) % size] += r;
+	st[i % size] = r;
+	i = (i + 1) % size;
+    }
+    for (j = 0; j < size; j++) {
+	r = tinymt32_ini_func2(st[i % size]
+			       + st[(i + mid) % size]
+			       + st[(i + size - 1) % size]);
+	st[(i + mid) % size] ^= r;
+	r -= i;
+	st[(i + mid + lag) % size] ^= r;
+	st[i % size] = r;
+	i = (i + 1) % size;
+    }
+    tiny->s0 = st[0];
+    tiny->s1 = st[1];
+    tiny->s2 = st[2];
+    tiny->s3 = st[3];
+    tinymt32_period_certification(tiny);
+    for (i = 0; i < TINYMT32_PRE_LOOP; i++) {
+	tinymt32_uint32(tiny);
+    }
+}
+
+/**
+ * Read the internal state vector from kernel I/O data, and
+ * put them into shared memory.
+ *
+ */
+inline static void
+tinymt32_status_read(tinymt32wp_t * tiny,
+		     __global tinymt32wp_t * g_status)
+{
+    const size_t id = tinymt_get_sequential_id();
+    tiny->s0 = g_status[id].s0;
+    tiny->s1 = g_status[id].s1;
+    tiny->s2 = g_status[id].s2;
+    tiny->s3 = g_status[id].s3;
+    tiny->mat1 = g_status[id].mat1;
+    tiny->mat2 = g_status[id].mat2;
+    tiny->tmat = g_status[id].tmat;
+}
+
+/**
+ * Read the internal state vector from shared memory, and
+ * write them into kernel I/O data.
+ *
+ */
+inline static void
+tinymt32_status_write(__global tinymt32wp_t * g_status,
+		      tinymt32wp_t * tiny)
+{
+    const size_t id = tinymt_get_sequential_id();
+    g_status[id].s0 = tiny->s0;
+    g_status[id].s1 = tiny->s1;
+    g_status[id].s2 = tiny->s2;
+    g_status[id].s3 = tiny->s3;
+#if defined(DEBUG)
+    g_status[id].mat1 = tiny->mat1;
+    g_status[id].mat2 = tiny->mat2;
+    g_status[id].tmat = tiny->tmat;
+#endif
+}
+
+#undef TINYMT32_SHIFT0
+#undef TINYMT32_SHIFT1
+#undef TINYMT32_MIN_LOOP
+#undef TINYMT32_PRE_LOOP
+
+#endif

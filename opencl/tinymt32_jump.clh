@@ -1,0 +1,427 @@
+#ifndef TINYMT32_JUMP_CLH
+#define TINYMT32_JUMP_CLH
+/**
+ * @file tinymt32_jump.clh
+ *
+ * @brief Sample Program for openCL 1.2
+ *
+ * tinymt32
+ * This program generates 32-bit unsigned integers.
+ * The period of generated integers is 2<sup>127</sup>-1.
+ *
+ * This also generates single precision floating point numbers
+ * uniformly distributed in the range [1, 2). (float r; 1.0 <= r < 2.0)
+ *
+ * @author Mutsuo Saito (Hiroshima University)
+ * @author Makoto Matsumoto (The University of Tokyo)
+ *
+ * Copyright (C) 2013 Mutsuo Saito, Makoto Matsumoto,
+ * Hiroshima University and The University of Tokyo.
+ * All rights reserved.
+ *
+ * The new BSD License is applied to this software, see LICENSE.txt
+ */
+#include "tinymt.clh"
+#include "f2_polynomial.clh"
+#include "tinymt32def.h"
+
+#define TINYMT32J_MIN_LOOP 8
+#define TINYMT32J_PRE_LOOP 8
+
+__constant int tinymt32j_sh0 = 1;
+__constant int tinymt32j_sh1 = 10;
+__constant int tinymt32j_sh8 = 8;
+__constant uint tinymt32j_mask = 0x7fffffffU;
+__constant uint tinymt32j_mat1 = 0x8f7011eeU;
+__constant uint tinymt32j_mat2 = 0xfc78ff1fU;
+__constant uint tinymt32j_tmat = 0x3793fdffU;
+__constant uint tinymt32j_tmat_float = (0x3793fdffU >> 9) | 0x3f800000U;
+
+/**
+ * Step between global id x and x + 1.
+ * This number is the largest 3<sup>x</sup> smaller than 2<sup>64</sup>.
+ * As far as a work item consumes random numbers less than 3<sup>40</sup>,
+ * the jump defined in this file will work well.
+ */
+__constant ulong tinymt32j_mag = 12157665459056928801UL;
+__constant char tinymt32j_characteristic[] =
+"d8524022ed8dff4a8dcc50c798faba43";
+
+inline static void
+tinymt32j_mul(ulong *zh, ulong *zl, ulong x, ulong y);
+inline static void
+tinymt32j_add(tinymt32j_t * dist, tinymt32j_t * src);
+inline static void
+tinymt32j_next_state(tinymt32j_t *tiny);
+inline static uint
+tinymt32j_temper(tinymt32j_t *tiny);
+inline static float
+tinymt32j_temper_float12(tinymt32j_t *tiny);
+inline static void
+tinymt32j_init_seed(tinymt32j_t *tiny, uint seed);
+inline static void
+tinymt32j_init_by_array(tinymt32j_t * tiny,
+			uint init_key[],
+			int key_length);
+inline static void
+period_certification(tinymt32j_t * tiny);
+inline static void
+tinymt32j_init(tinymt32j_t *tiny, uint seed);
+inline static uint
+tinymt32j_func1(uint x);
+inline static uint
+tinymt32j_func2(uint x);
+inline static void
+tinymt32j_jump_by_polynomial(tinymt32j_t *tiny,
+			     tinymt_f2_polynomial * jump_poly);
+
+/**
+ * This is lazy multiplication function 64bit x 64bit -> 128bit
+ * @param zh result high 64bit
+ * @param zl result low 64bit
+ * @param x 64-bit number
+ * @param y 64-bit number
+ */
+inline static void
+tinymt32j_mul(ulong *zh, ulong *zl, ulong x, ulong y)
+{
+    uint xl = x & 0xffffffffU;
+    uint xh = x >> 32;
+    uint yl = y & 0xffffffffU;
+    uint yh = y >> 32;
+    ulong tmp;
+    *zl = (ulong)xl * (ulong)yl;
+    tmp = (ulong)xh * (ulong)yl;
+    *zh = tmp >> 32;
+    tmp &= 0xffffffffU;
+    tmp += (ulong)xl * (ulong)yh;
+    *zh += tmp >> 32;
+    tmp &= 0xffffffffU;
+    tmp += *zl >> 32;
+    *zl &= 0xffffffffU;
+    *zl = *zl+ (tmp << 32);
+    *zh += tmp >> 32;
+    *zh += (ulong)xh * (ulong)yh;
+}
+
+/**
+ * Addition of internal state
+ * @param dest destination (changed)
+ * @param src source (not changed)
+ */
+inline static void
+tinymt32j_add(tinymt32j_t * dest, tinymt32j_t * src)
+{
+    dest->s0 ^= src->s0;
+    dest->s1 ^= src->s1;
+    dest->s2 ^= src->s2;
+    dest->s3 ^= src->s3;
+}
+
+/**
+ * State transition function
+ * @param tiny internal state
+ */
+inline static void
+tinymt32j_next_state(tinymt32j_t *tiny)
+{
+    uint x;
+    uint y;
+
+    y = tiny->s3;
+    x = (tiny->s0 & tinymt32j_mask)
+        ^ tiny->s1
+        ^ tiny->s2;
+    x ^= (x << tinymt32j_sh0);
+    y ^= (y >> tinymt32j_sh0) ^ x;
+    tiny->s0 = tiny->s1;
+    tiny->s1 = tiny->s2;
+    tiny->s2 = x ^ (y << tinymt32j_sh1);
+    tiny->s3 = y;
+    if (y & 1) {
+	tiny->s1 ^= tinymt32j_mat1;
+	tiny->s2 ^= tinymt32j_mat2;
+    }
+}
+
+/**
+ * Tempering function
+ * @param tiny internal state
+ * @return generated number
+ */
+inline static uint
+tinymt32j_temper(tinymt32j_t *tiny)
+{
+    uint t0;
+    uint t1;
+    t0 = tiny->s3;
+    t1 = tiny->s0
+        + (tiny->s2 >> tinymt32j_sh8);
+    t0 ^= t1;
+    if (t1 & 1) {
+	t0 ^= tinymt32j_tmat;
+    }
+    return t0;
+}
+
+/**
+ * Tempering function
+ * @param tiny internal state
+ * @return generated number
+ */
+inline static float
+tinymt32j_temper_float12(tinymt32j_t *tiny)
+{
+    uint t0;
+    uint t1;
+    t0 = tiny->s3;
+    t1 = tiny->s0
+        + (tiny->s2 >> tinymt32j_sh8);
+    t0 ^= t1;
+    if (t1 & 1) {
+	t0 = (t0 >> 9) ^ tinymt32j_tmat_float;
+    } else {
+	t0 = (t0 >> 9) ^ 0x3f800000U;
+    }
+    return as_float(t0);
+}
+
+/**
+ * Tempering function
+ * @param tiny internal state
+ * @return generated number
+ */
+inline static float
+tinymt32j_temper_float01(tinymt32j_t *tiny)
+{
+    return tinymt32j_temper_float12(tiny) - 1.0f;
+}
+
+/**
+ * Internal function
+ * This function represents a function used in the initialization
+ * by init_by_array
+ * @param x 32-bit integer
+ * @return 32-bit integer
+ */
+inline static uint
+tinymt32j_func1(uint x) {
+    return (x ^ (x >> 27)) * 1664525U;
+}
+
+/**
+ * Internal function
+ * This function represents a function used in the initialization
+ * by init_by_array
+ * @param x 32-bit integer
+ * @return 32-bit integer
+ */
+inline static uint
+tinymt32j_func2(uint x) {
+    return (x ^ (x >> 27)) * 1566083941U;
+}
+
+/**
+ * Internal function.
+ * This function certificate the period of 2^127-1.
+ * @param tiny tinymt state vector.
+ */
+inline static void
+period_certification(tinymt32j_t * tiny)
+{
+    if ((tiny->s0 & tinymt32j_mask) == 0 &&
+        tiny->s1 == 0 &&
+        tiny->s2 == 0 &&
+        tiny->s3 == 0) {
+        tiny->s0 = 'T';
+        tiny->s1 = 'I';
+        tiny->s2 = 'N';
+        tiny->s3 = 'Y';
+    }
+}
+
+/**
+ * This function initializes the internal state array with a 32-bit
+ * unsigned integer seed.
+ * @param tiny tinymt state vector.
+ * @param seed a 32-bit unsigned integer used as a seed.
+ */
+inline static void
+tinymt32j_init_seed(tinymt32j_t *tiny, uint seed)
+{
+    uint status[4];
+    status[0] = seed;
+    status[1] = tinymt32j_mat1;
+    status[2] = tinymt32j_mat2;
+    status[3] = tinymt32j_tmat;
+    for (int i = 1; i < TINYMT32J_MIN_LOOP; i++) {
+        status[i & 3] ^= i + 1812433253U
+            * (status[(i - 1) & 3]
+               ^ (status[(i - 1) & 3] >> 30));
+    }
+    tiny->s0 = status[0];
+    tiny->s1 = status[1];
+    tiny->s2 = status[2];
+    tiny->s3 = status[3];
+    period_certification(tiny);
+    for (int i = 0; i < TINYMT32J_PRE_LOOP; i++) {
+        tinymt32j_next_state(tiny);
+    }
+}
+
+/**
+ * This function initializes the internal state array,
+ * with an array of 32-bit unsigned integers used as seeds
+ * @param tinymt tinymt state vector.
+ * @param init_key the array of 32-bit integers, used as a seed.
+ * @param key_length the length of init_key.
+ */
+inline static void
+tinymt32j_init_by_array(tinymt32j_t * tiny,
+			uint init_key[],
+			int key_length)
+{
+    const int lag = 1;
+    const int mid = 1;
+    const int size = 4;
+    int i, j;
+    int count;
+    uint r;
+    uint st[4];
+
+    st[0] = 0;
+    st[1] = tinymt32j_mat1;
+    st[2] = tinymt32j_mat2;
+    st[3] = tinymt32j_tmat;
+    if (key_length + 1 > TINYMT32J_MIN_LOOP) {
+	count = key_length + 1;
+    } else {
+	count = TINYMT32J_MIN_LOOP;
+    }
+    r = tinymt32j_func1(st[0] ^ st[mid % size]
+		  ^ st[(size - 1) % size]);
+    st[mid % size] += r;
+    r += key_length;
+    st[(mid + lag) % size] += r;
+    st[0] = r;
+    count--;
+    for (i = 1, j = 0; (j < count) && (j < key_length); j++) {
+	r = tinymt32j_func1(st[i % size]
+		      ^ st[(i + mid) % size]
+		      ^ st[(i + size - 1) % size]);
+	st[(i + mid) % size] += r;
+	r += init_key[j] + i;
+	st[(i + mid + lag) % size] += r;
+	st[i % size] = r;
+	i = (i + 1) % size;
+    }
+    for (; j < count; j++) {
+	r = tinymt32j_func1(st[i % size]
+		      ^ st[(i + mid) % size]
+		      ^ st[(i + size - 1) % size]);
+	st[(i + mid) % size] += r;
+	r += i;
+	st[(i + mid + lag) % size] += r;
+	st[i % size] = r;
+	i = (i + 1) % size;
+    }
+    for (j = 0; j < size; j++) {
+	r = tinymt32j_func2(st[i % size]
+		      + st[(i + mid) % size]
+		      + st[(i + size - 1) % size]);
+	st[(i + mid) % size] ^= r;
+	r -= i;
+	st[(i + mid + lag) % size] ^= r;
+	st[i % size] = r;
+	i = (i + 1) % size;
+    }
+    tiny->s0 = st[0];
+    tiny->s1 = st[1];
+    tiny->s2 = st[2];
+    tiny->s3 = st[3];
+    period_certification(tiny);
+    for (i = 0; i < TINYMT32J_PRE_LOOP; i++) {
+	tinymt32j_next_state(tiny);
+    }
+}
+
+/**
+ * jump using the jump polynomial.
+ * This function is not as time consuming as calculating jump polynomial.
+ * This function can use multiple time for the tinymt32j structure.
+ * @param tiny tinymt32j structure, overwritten by new state after calling
+ * this function.
+ * @param jump_poly the jump polynomial calculated by
+ * tinymt32j_calculate_jump_polynomial.
+ */
+inline static void
+tinymt32j_jump_by_polynomial(tinymt32j_t *tiny,
+			     tinymt_f2_polynomial * jump_poly)
+{
+    tinymt32j_t work_z;
+    tinymt32j_t * work = &work_z;
+    *work = *tiny;
+    work->s0 = 0;
+    work->s1 = 0;
+    work->s2 = 0;
+    work->s3 = 0;
+
+    ulong x64 = jump_poly->ar[0];
+    for (int i = 0; i < 64; i++) {
+	if ((x64 & 1) != 0) {
+	    tinymt32j_add(work, tiny);
+	}
+	tinymt32j_next_state(tiny);
+	x64 = x64 >> 1;
+    }
+    x64 = jump_poly->ar[1];
+    while (x64 != 0) {
+	if ((x64 & 1) != 0) {
+	    tinymt32j_add(work, tiny);
+	}
+	tinymt32j_next_state(tiny);
+	x64 = x64 >> 1;
+    }
+    *tiny = *work;
+}
+
+inline static void
+tinymt32j_init(tinymt32j_t *tiny, uint seed)
+{
+    tinymt32j_init_seed(tiny, seed);
+    size_t gid = + get_global_id(2) - get_global_offset(2)
+	+ get_global_size(2) * (get_global_id(1) - get_global_offset(1))
+	+ get_global_size(1) * get_global_size(2)
+	* (get_global_id(0) - get_global_offset(0));
+    ulong low_step;
+    ulong high_step;
+    tinymt32j_mul(&high_step, &low_step, tinymt32j_mag, gid);
+    tinymt_f2_polynomial jump;
+    tinymt_calculate_jump_polynomial(&jump, low_step, high_step,
+				     tinymt32j_characteristic);
+
+}
+
+inline static void
+tinymt32j_status_write(__global tinymt32j_t * g_status,
+		       tinymt32j_t * tiny)
+{
+    const size_t id = tinymt_get_sequential_id();
+    g_status[id].s0 = tiny->s0;
+    g_status[id].s1 = tiny->s1;
+    g_status[id].s2 = tiny->s2;
+    g_status[id].s3 = tiny->s3;
+}
+
+inline static void
+tinymt32j_status_read(tinymt32j_t * tiny,
+		      __global tinymt32j_t * g_status)
+{
+    const size_t id = tinymt_get_sequential_id();
+    tiny->s0 = g_status[id].s0;
+    tiny->s1 = g_status[id].s1;
+    tiny->s2 = g_status[id].s2;
+    tiny->s3 = g_status[id].s3;
+}
+
+#endif /* EOF */
