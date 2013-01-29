@@ -20,7 +20,6 @@ typedef uint32_t uint;
 #include "tinymt32.h"
 #include "test_common.h"
 #include "parse_opt.h"
-#include "file_reader.h"
 
 using namespace std;
 using namespace cl;
@@ -40,10 +39,7 @@ std::string errorMessage;
 /* =========================
    declaration
    ========================= */
-static Buffer get_param_buff(std::string& filename,
-			     int total_num);
-static void calc_pi(Buffer& tinymt_status,
-		    int total_num,
+static void calc_pi(int total_num,
 		    int local_num,
 		    int data_size);
 static int sample(int argc, char * argv[]);
@@ -89,9 +85,9 @@ static int sample(int argc, char * argv[])
     devices = getDevices();
     context = getContext();
 #if defined(APPLE) || defined(__MACOSX) || defined(__APPLE__)
-    source = getSource("sample32.cli");
+    source = getSource("sample32_jump.cli");
 #else
-    source = getSource("sample32.cl");
+    source = getSource("sample32_jump.cl");
 #endif
     const char * option = "";
 #if defined(DEBUG)
@@ -110,8 +106,7 @@ static int sample(int argc, char * argv[])
 	     << endl;
 	return -1;
     }
-    Buffer tinymt_status = get_param_buff(opt.filename, total_num);
-    calc_pi(tinymt_status, total_num, opt.local_num, opt.data_count);
+    calc_pi(total_num, opt.local_num, opt.data_count);
     return 0;
 }
 
@@ -121,10 +116,9 @@ static int sample(int argc, char * argv[])
  *@param total_num number of groups for execution
  *@param data_size number of data to generate
  */
-static void calc_pi(Buffer& tinymt_status,
-			    int total_num,
-			    int local_num,
-			    int data_size)
+static void calc_pi(int total_num,
+		    int local_num,
+		    int data_size)
 {
 #if defined(DEBUG)
     cout << "calc_pi start" << endl;
@@ -142,12 +136,11 @@ static void calc_pi(Buffer& tinymt_status,
 			 CL_MEM_READ_WRITE,
 			 sizeof(uint32_t) * total_num / local_num);
 
-    uint_kernel.setArg(0, tinymt_status);
-    uint_kernel.setArg(1, seed);
-    uint_kernel.setArg(2, data_size / total_num);
-    uint_kernel.setArg(3, result_buffer);
-    uint_kernel.setArg(4, global_buffer);
-    uint_kernel.setArg(5, sizeof(uint32_t) * local_num, NULL);
+    uint_kernel.setArg(0, seed);
+    uint_kernel.setArg(1, data_size / total_num);
+    uint_kernel.setArg(2, result_buffer);
+    uint_kernel.setArg(3, global_buffer);
+    uint_kernel.setArg(4, sizeof(uint32_t) * local_num, NULL);
     NDRange global(total_num);
     NDRange local(local_num);
     Event generate_event;
@@ -176,37 +169,3 @@ static void calc_pi(Buffer& tinymt_status,
 #endif
 }
 
-/* ==============
- * utility programs
- * ==============*/
-static Buffer get_param_buff(std::string& filename,
-			     int total_num)
-{
-#if defined(DEBUG)
-    cout << "get_rec_buff start" << endl;
-#endif
-    tinymt::file_reader fr(filename);
-    tinymt32wp_t * status_tbl = new tinymt32wp_t[total_num];
-    uint32_t mat1;
-    uint32_t mat2;
-    uint32_t tmat;
-    for (int i = 0; i < total_num; i++) {
-	fr.get(&mat1, &mat2, &tmat);
-	status_tbl[i].mat1 = mat1;
-	status_tbl[i].mat2 = mat2;
-	status_tbl[i].tmat = tmat;
-    }
-    Buffer status_buffer(context,
-			 CL_MEM_READ_ONLY,
-			 total_num * sizeof(tinymt32wp_t));
-    queue.enqueueWriteBuffer(status_buffer,
-			     CL_TRUE,
-			     0,
-			     total_num * sizeof(tinymt32wp_t),
-			     status_tbl);
-    delete[] status_tbl;
-#if defined(DEBUG)
-    cout << "get_rec_buff end" << endl;
-#endif
-    return status_buffer;
-}

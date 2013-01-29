@@ -30,6 +30,7 @@ namespace tinymt {
     class file_reader {
     public:
 	void get(uint32_t * mat1, uint32_t * mat2, uint32_t * tmat);
+	void get(uint32_t * mat1, uint32_t * mat2, uint64_t * tmat);
 	file_reader(const std::string& p_filename);
     private:
 	enum {bufsize = 500};
@@ -37,6 +38,8 @@ namespace tinymt {
 	int pos;
 	char * search_comma_next(char * buffer, int count);
 	void get_params(uint32_t *mat1, uint32_t *mat2, uint32_t *tmat,
+			char *buffer);
+	void get_params(uint32_t *mat1, uint32_t *mat2, uint64_t *tmat,
 			char *buffer);
     };
 }

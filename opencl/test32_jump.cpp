@@ -17,9 +17,8 @@ typedef uint32_t uint;
 #include <string>
 #include <float.h>
 
-typedef uint32_t uint;
 #include "tinymt32.h"
-#include "tinymt32-sample-common.h"
+#include "test_common.h"
 #include "parse_opt.h"
 extern "C" {
 #include "jump32.h"
@@ -106,7 +105,12 @@ int main(int argc, char * argv[])
     } catch (Error e) {
 	cerr << "Error Code:" << e.err() << endl;
 	cerr << e.what() << endl;
+    } catch (std::string& er) {
+	cerr << er << endl;
+    } catch (...) {
+	cerr << "other error" << endl;
     }
+    return -1;
 }
 
 /**
@@ -486,13 +490,12 @@ static int init_check_data_array(tinymt32_t tinymt32[],
     cout << "init_check_data_array start" << endl;
 #endif
     tinymt32_init_by_array(&tinymt32[0], seed_array, size);
-    for (int i = 0; i < total_num; i++) {
-	for (int j = 0; j < i; j++) {
-	    tinymt32_jump(&tinymt32[i],
-			  tinymt32j_mag,
-			  0,
-			  tinymt32j_characteristic);
-	}
+    for (int i = 1; i < total_num; i++) {
+	tinymt32[i] = tinymt32[i - 1];
+	tinymt32_jump(&tinymt32[i],
+		      tinymt32j_mag,
+		      0,
+		      tinymt32j_characteristic);
     }
 #if defined(DEBUG)
     cout << "init_check_data_array end" << endl;
@@ -647,11 +650,13 @@ static void check_status(tinymt32j_t * h_status,
 	cout << "s1:" << hex << h_status[0].s1 << endl;
 	cout << "s2:" << hex << h_status[0].s2 << endl;
 	cout << "s3:" << hex << h_status[0].s3 << endl;
+	cout << "s0:" << hex << h_status[1].s0 << endl;
 	cout << "host:" << endl;
 	cout << "s0:" << hex << tinymt32[0].status[0] << endl;
 	cout << "s1:" << hex << tinymt32[0].status[1] << endl;
 	cout << "s2:" << hex << tinymt32[0].status[2] << endl;
 	cout << "s3:" << hex << tinymt32[0].status[3] << endl;
+	cout << "s0:" << hex << tinymt32[1].status[0] << endl;
 #endif
     for (int i = 0; i < total_num; i++) {
 	for (int j = 0; j < 4; j++) {

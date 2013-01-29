@@ -13,7 +13,7 @@ CPPOPT = -Wall -Wextra -O3 $(M64) $(INC) -I../tinymt \
 CPP = g++ $(CPPOPT)
 
 # comment out next line if you are using NTL with gf2x
-# NTL_OPT = -lgf2x
+NTL_OPT = -lgf2x
 # comment out next line if you are using NTL with gmp
 # NTL_OPT = -lgmp
 
@@ -46,6 +46,9 @@ jump_test64: jump_test64.c ../tinymt/tinymt64.o f2-polynomial.o jump64.o
 
 ntl_jump_test32: ntl_jump_test32.cpp ../tinymt/tinymt32.o
 	${CPP} -o $@ ntl_jump_test32.cpp ../tinymt/tinymt32.o -lntl ${NTL_OPT}
+
+calc_jump_poly: calc_jump_poly.cpp
+	${CPP} -o $@ calc_jump_poly.cpp -lntl ${NTL_OPT}
 
 sample: sample.c ../tinymt/tinymt32.o f2-polynomial.o jump32.o
 	${CC} -o $@ sample.c ../tinymt/tinymt32.o f2-polynomial.o jump32.o

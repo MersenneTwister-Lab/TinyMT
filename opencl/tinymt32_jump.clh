@@ -22,7 +22,8 @@
  * The new BSD License is applied to this software, see LICENSE.txt
  */
 #include "tinymt.clh"
-#include "f2_polynomial.clh"
+#include "tinymt32_jump_table.clh"
+//#include "f2_polynomial.clh"
 #include "tinymt32def.h"
 
 #define TINYMT32J_MIN_LOOP 8
@@ -44,11 +45,11 @@ __constant uint tinymt32j_tmat_float = (0x3793fdffU >> 9) | 0x3f800000U;
  * the jump defined in this file will work well.
  */
 __constant ulong tinymt32j_mag = 12157665459056928801UL;
-__constant char tinymt32j_characteristic[] =
-"d8524022ed8dff4a8dcc50c798faba43";
+//__constant char tinymt32j_characteristic[] =
+//"d8524022ed8dff4a8dcc50c798faba43";
 
-inline static void
-tinymt32j_mul(ulong *zh, ulong *zl, ulong x, ulong y);
+//inline static void
+//tinymt32j_mul(ulong *zh, ulong *zl, ulong x, ulong y);
 inline static void
 tinymt32j_add(tinymt32j_t * dist, tinymt32j_t * src);
 inline static void
@@ -57,6 +58,12 @@ inline static uint
 tinymt32j_temper(tinymt32j_t *tiny);
 inline static float
 tinymt32j_temper_float12(tinymt32j_t *tiny);
+inline static uint
+tinymt32j_uint32(tinymt32j_t *tiny);
+inline static float
+tinymt32j_single12(tinymt32j_t *tiny);
+inline static float
+tinymt32j_single01(tinymt32j_t *tiny);
 inline static void
 tinymt32j_init_seed(tinymt32j_t *tiny, uint seed);
 inline static void
@@ -64,7 +71,7 @@ tinymt32j_init_by_array(tinymt32j_t * tiny,
 			uint init_key[],
 			int key_length);
 inline static void
-period_certification(tinymt32j_t * tiny);
+tinymt32j_period_certification(tinymt32j_t * tiny);
 inline static void
 tinymt32j_init(tinymt32j_t *tiny, uint seed);
 inline static uint
@@ -73,8 +80,9 @@ inline static uint
 tinymt32j_func2(uint x);
 inline static void
 tinymt32j_jump_by_polynomial(tinymt32j_t *tiny,
-			     tinymt_f2_polynomial * jump_poly);
+			     uint jump_array[4]);
 
+#if 0
 /**
  * This is lazy multiplication function 64bit x 64bit -> 128bit
  * @param zh result high 64bit
@@ -103,7 +111,7 @@ tinymt32j_mul(ulong *zh, ulong *zl, ulong x, ulong y)
     *zh += tmp >> 32;
     *zh += (ulong)xh * (ulong)yh;
 }
-
+#endif
 /**
  * Addition of internal state
  * @param dest destination (changed)
@@ -169,6 +177,18 @@ tinymt32j_temper(tinymt32j_t *tiny)
  * @param tiny internal state
  * @return generated number
  */
+inline static uint
+tinymt32j_uint32(tinymt32j_t *tiny)
+{
+    tinymt32j_next_state(tiny);
+    return tinymt32j_temper(tiny);
+}
+
+/**
+ * Tempering function
+ * @param tiny internal state
+ * @return generated number
+ */
 inline static float
 tinymt32j_temper_float12(tinymt32j_t *tiny)
 {
@@ -192,9 +212,21 @@ tinymt32j_temper_float12(tinymt32j_t *tiny)
  * @return generated number
  */
 inline static float
-tinymt32j_temper_float01(tinymt32j_t *tiny)
+tinymt32j_single12(tinymt32j_t *tiny)
 {
-    return tinymt32j_temper_float12(tiny) - 1.0f;
+    tinymt32j_next_state(tiny);
+    return tinymt32j_temper_float12(tiny);
+}
+
+/**
+ * Tempering function
+ * @param tiny internal state
+ * @return generated number
+ */
+inline static float
+tinymt32j_single01(tinymt32j_t *tiny)
+{
+    return tinymt32j_single12(tiny) - 1.0f;
 }
 
 /**
@@ -227,7 +259,7 @@ tinymt32j_func2(uint x) {
  * @param tiny tinymt state vector.
  */
 inline static void
-period_certification(tinymt32j_t * tiny)
+tinymt32j_period_certification(tinymt32j_t * tiny)
 {
     if ((tiny->s0 & tinymt32j_mask) == 0 &&
         tiny->s1 == 0 &&
@@ -263,7 +295,7 @@ tinymt32j_init_seed(tinymt32j_t *tiny, uint seed)
     tiny->s1 = status[1];
     tiny->s2 = status[2];
     tiny->s3 = status[3];
-    period_certification(tiny);
+    tinymt32j_period_certification(tiny);
     for (int i = 0; i < TINYMT32J_PRE_LOOP; i++) {
         tinymt32j_next_state(tiny);
     }
@@ -339,7 +371,7 @@ tinymt32j_init_by_array(tinymt32j_t * tiny,
     tiny->s1 = st[1];
     tiny->s2 = st[2];
     tiny->s3 = st[3];
-    period_certification(tiny);
+    tinymt32j_period_certification(tiny);
     for (i = 0; i < TINYMT32J_PRE_LOOP; i++) {
 	tinymt32j_next_state(tiny);
     }
@@ -355,51 +387,53 @@ tinymt32j_init_by_array(tinymt32j_t * tiny,
  * tinymt32j_calculate_jump_polynomial.
  */
 inline static void
-tinymt32j_jump_by_polynomial(tinymt32j_t *tiny,
-			     tinymt_f2_polynomial * jump_poly)
+tinymt32j_jump_by_array(tinymt32j_t *tiny,
+			__constant uint * jump_array)
 {
     tinymt32j_t work_z;
     tinymt32j_t * work = &work_z;
-    *work = *tiny;
     work->s0 = 0;
     work->s1 = 0;
     work->s2 = 0;
     work->s3 = 0;
 
-    ulong x64 = jump_poly->ar[0];
-    for (int i = 0; i < 64; i++) {
-	if ((x64 & 1) != 0) {
-	    tinymt32j_add(work, tiny);
+    for (int i = 0; i < 4; i++) {
+	uint x = jump_array[i];
+	for (int i = 0; i < 32; i++) {
+	    if ((x & 1) != 0) {
+		tinymt32j_add(work, tiny);
+	    }
+	    tinymt32j_next_state(tiny);
+	    x = x >> 1;
 	}
-	tinymt32j_next_state(tiny);
-	x64 = x64 >> 1;
-    }
-    x64 = jump_poly->ar[1];
-    while (x64 != 0) {
-	if ((x64 & 1) != 0) {
-	    tinymt32j_add(work, tiny);
-	}
-	tinymt32j_next_state(tiny);
-	x64 = x64 >> 1;
     }
     *tiny = *work;
 }
 
 inline static void
-tinymt32j_init(tinymt32j_t *tiny, uint seed)
+tinymt32j_init_jump(tinymt32j_t *tiny, uint seed)
 {
     tinymt32j_init_seed(tiny, seed);
-    size_t gid = + get_global_id(2) - get_global_offset(2)
-	+ get_global_size(2) * (get_global_id(1) - get_global_offset(1))
-	+ get_global_size(1) * get_global_size(2)
-	* (get_global_id(0) - get_global_offset(0));
-    ulong low_step;
-    ulong high_step;
-    tinymt32j_mul(&high_step, &low_step, tinymt32j_mag, gid);
-    tinymt_f2_polynomial jump;
-    tinymt_calculate_jump_polynomial(&jump, low_step, high_step,
-				     tinymt32j_characteristic);
+    size_t gid = tinymt_get_sequential_id();
+    for (int i = 0; (gid != 0) && (i < TINYMT32_JUMP_TABLE_SIZE); i++) {
+	if ((gid & 1) != 0) {
+	    tinymt32j_jump_by_array(tiny, tinymt32_jump_table[i]);
+	}
+	gid = gid >> 1;
+    }
+}
 
+inline static void
+tinymt32j_init_jump_array(tinymt32j_t *tiny, uint * seed_array, int size)
+{
+    tinymt32j_init_by_array(tiny, seed_array, size);
+    size_t gid = tinymt_get_sequential_id();
+    for (int i = 0; i < TINYMT32_JUMP_TABLE_SIZE; i++) {
+	if ((gid & 1) != 0) {
+	    tinymt32j_jump_by_array(tiny, tinymt32_jump_table[i]);
+	}
+	gid = gid >> 1;
+    }
 }
 
 inline static void

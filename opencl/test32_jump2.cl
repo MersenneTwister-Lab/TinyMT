@@ -1,5 +1,5 @@
 /**
- * @file test32_jump.cl
+ * @file test32_jump2.cl
  *
  * @brief Test Program for openCL 1.2
  *
@@ -30,14 +30,19 @@
  */
 __kernel void
 tinymt_init_seed_kernel(__global tinymt32j_t * d_status,
+			__constant uint * jump_table,
 			uint seed)
 {
     tinymt32j_t tiny;
+    size_t gid = tinymt_get_sequential_id();
 
-    tinymt32j_init_jump(&tiny, seed);
-#if defined(DEBUG)
-//    tiny.tmat = seed + id;
-#endif
+    tinymt32j_init_seed(&tiny, seed);
+    for (int i = 0; gid != 0; i++) {
+        if ((gid & 1) != 0) {
+            tinymt32j_jump_by_array(&tiny, &jump_table[i * 4]);
+        }
+        gid = gid >> 1;
+    }
     tinymt32j_status_write(d_status, &tiny);
 }
 
@@ -50,19 +55,14 @@ tinymt_init_seed_kernel(__global tinymt32j_t * d_status,
  * @param[in] size number of output data requested.
  */
 __kernel void
-tinymt_init_array_kernel(__global tinymt32j_t * d_status,
-			 __global uint * seeds,
-			int length)
+tinymt_jump_kernel(__global tinymt32j_t * d_status,
+		   __constant uint * jump_table)
 {
     tinymt32j_t tiny;
-    uint local_seeds[10];
-    if (length > 10) {
-	length = 10;
-    }
-    for (int i = 0; i < length; i++) {
-	local_seeds[i] = seeds[i];
-    }
-    tinymt32j_init_jump_array(&tiny, local_seeds, length);
+    size_t gid = tinymt_get_sequential_id();
+
+    tinymt32j_status_read(&tiny, d_status);
+    tinymt32j_jump_by_array(&tiny, jump_table);
     tinymt32j_status_write(d_status, &tiny);
 }
 
@@ -85,56 +85,8 @@ tinymt_uint32_kernel(__global tinymt32j_t * d_status,
 
     tinymt32j_status_read(&tiny, d_status);
     for (int i = 0; i < size; i++) {
-	d_data[global_size * i + id] = tinymt32j_uint32(&tiny);
+	//d_data[global_size * id + i] = tinymt32j_uint32(&tiny);
+	d_data[size * id + i] = tinymt32j_uint32(&tiny);
     }
     tinymt32j_status_write(d_status, &tiny);
 }
-
-/**
- * kernel function.
- * This function generates 32-bit unsigned integers in d_data
- *
- * @param[in,out] d_status kernel I/O data
- * @param[out] d_data output
- * @param[in] size number of output data requested.
- */
-__kernel void
-tinymt_single12_kernel(__global tinymt32j_t * d_status,
-		       __global float * d_data,
-		       int size)
-{
-    const size_t id = tinymt_get_sequential_id();
-    const size_t sequential_size = tinymt_get_sequential_size();
-    tinymt32j_t tiny;
-
-    tinymt32j_status_read(&tiny, d_status);
-    for (int i = 0; i < size; i++) {
-	d_data[sequential_size * i + id] = tinymt32j_single12(&tiny);
-    }
-    tinymt32j_status_write(d_status, &tiny);
-}
-
-/**
- * kernel function.
- * This function generates 32-bit unsigned integers in d_data
- *
- * @param[in,out] d_status kernel I/O data
- * @param[out] d_data output
- * @param[in] size number of output data requested.
- */
-__kernel void
-tinymt_single01_kernel(__global tinymt32j_t * d_status,
-		       __global float * d_data,
-		       int size)
-{
-    const size_t id = tinymt_get_sequential_id();
-    const size_t sequential_size = tinymt_get_sequential_size();
-    tinymt32j_t tiny;
-
-    tinymt32j_status_read(&tiny, d_status);
-    for (int i = 0; i < size; i++) {
-	d_data[sequential_size * i + id] = tinymt32j_single01(&tiny);
-    }
-    tinymt32j_status_write(d_status, &tiny);
-}
-
