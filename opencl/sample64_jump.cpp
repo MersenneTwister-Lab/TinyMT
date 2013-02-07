@@ -5,6 +5,7 @@
 #define CL_USE_DEPRECATED_OPENCL_1_1_APIS
 #define __CL_ENABLE_EXCEPTIONS
 
+
 #include <cstddef>
 #include <iostream>
 #include <iomanip>
@@ -12,14 +13,15 @@
 #include <string>
 #include <float.h>
 #include <errno.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <inttypes.h>
 
 typedef uint32_t uint;
+typedef uint64_t ulong;
 #include "opencl_tools.hpp"
-#include "tinymt32def.h"
-#include "tinymt32.h"
-#include "file_reader.h"
+#include "tinymt64def.h"
+#include "tinymt64.h"
 
 using namespace std;
 using namespace cl;
@@ -39,15 +41,12 @@ std::string errorMessage;
 /* =========================
    declaration
    ========================= */
-static std::string filename;
 static int group_num;
 static int local_num;
 static int data_count;
+
 static bool parse_opt(int argc, char **argv);
-static Buffer get_param_buff(std::string& filename,
-			     int total_num);
-static void calc_pi(Buffer& tinymt_status,
-		    int total_num,
+static void calc_pi(int total_num,
 		    int local_num,
 		    int data_size);
 static int sample(int argc, char * argv[]);
@@ -91,16 +90,20 @@ static int sample(int argc, char * argv[])
     platforms = getPlatforms();
     devices = getDevices();
     context = getContext();
+    if (!hasDoubleExtension()) {
+	cout << "the GPU device does not have double extension." << endl;
+	return -1;
+    }
 #if defined(INCLUDE_IMPOSSIBLE)
-    source = getSource("sample32.cli");
+    source = getSource("sample64_jump.cli");
 #else
-    source = getSource("sample32.cl");
+    source = getSource("sample64_jump.cl");
 #endif
-    const char * option = "";
+    std::string option = "-DHAVE_DOUBLE ";
 #if defined(DEBUG)
-    option = "-DDEBUG";
+    option += "-DDEBUG ";
 #endif
-    program = getProgram(option);
+    program = getProgram(option.c_str());
     queue = getCommandQueue();
 #if defined(DEBUG)
     cout << "openCL setup end" << endl;
@@ -113,48 +116,38 @@ static int sample(int argc, char * argv[])
 	     << endl;
 	return -1;
     }
-    Buffer tinymt_status = get_param_buff(filename, total_num);
-    calc_pi(tinymt_status, total_num, local_num, data_count);
+    calc_pi(total_num, local_num, data_count);
     return 0;
 }
 
 /**
  * calculate PI using Monte Carlo Simulation
- *@param tinymt_status device global memories
  *@param total_num total number of work items
  *@param local_num number of local work items
  *@param data_size number of data to generate
  */
-static void calc_pi(Buffer& tinymt_status,
-		    int total_num,
+static void calc_pi(int total_num,
 		    int local_num,
 		    int data_size)
 {
 #if defined(DEBUG)
     cout << "calc_pi start" << endl;
 #endif
-    int r = data_size % total_num;
-    if (r != 0) {
-	data_size = data_size + total_num - r;
+    int group_num = total_num / local_num;
+    int min_size = total_num;
+    if (data_size % min_size != 0) {
+	data_size = (data_size / min_size + 1) * min_size;
     }
-    uint32_t seed = 1234;
+    uint64_t seed = 1234;
     Kernel uint_kernel(program, "calc_pi");
     Buffer global_buffer(context,
 			 CL_MEM_READ_WRITE,
-			 sizeof(uint32_t) * total_num / local_num);
+			 sizeof(uint32_t) * group_num);
 
-    uint_kernel.setArg(0, tinymt_status);
-    uint_kernel.setArg(1, seed);
-    uint_kernel.setArg(2, data_size / total_num);
-    uint_kernel.setArg(3, global_buffer);
-    uint_kernel.setArg(4, sizeof(uint32_t) * local_num, NULL);
-#if defined(DEBUG)
-    cout << "seed:" << dec << seed << endl;
-    cout << "data_size:" << dec << data_size << endl;
-    cout << "data_size/item:" << dec << (data_size / total_num) << endl;
-    cout << "total_num:" << dec << total_num << endl;
-    cout << "local_num:" << dec << local_num << endl;
-#endif
+    uint_kernel.setArg(0, seed);
+    uint_kernel.setArg(1, data_size / total_num);
+    uint_kernel.setArg(2, global_buffer);
+    uint_kernel.setArg(3, sizeof(uint32_t) * local_num, NULL);
     NDRange global(total_num);
     NDRange local(local_num);
     Event generate_event;
@@ -167,22 +160,19 @@ static void calc_pi(Buffer& tinymt_status,
 			       local,
 			       NULL,
 			       &generate_event);
-    uint32_t * result = new uint32_t[total_num / local_num];
+    uint32_t * result = new uint32_t[group_num];
+    double pi = 0;
     generate_event.wait();
     queue.enqueueReadBuffer(global_buffer,
 			    CL_TRUE,
 			    0,
-			    sizeof(uint32_t) * total_num / local_num,
+			    sizeof(uint32_t) * group_num,
 			    result);
     double time = get_time(generate_event);
-    double pi = 0;
-    for (int i = 0; i < total_num / local_num; i++) {
+    for (int i = 0; i < group_num; i++) {
 	pi += result[i];
-#if defined(DEBUG)
-	cout << dec << i << ":" << dec << result[i] << endl;
-#endif
     }
-    pi = 4.0 * pi / data_size;
+    pi = pi * 4 / data_size;
     cout << "generate time:" << time * 1000 << "ms" << endl;
     cout << "calculated pi = " << pi << endl;
     delete[] result;
@@ -191,102 +181,60 @@ static void calc_pi(Buffer& tinymt_status,
 #endif
 }
 
-/* ==============
- * utility programs
- * ==============*/
-/**
- * get buffer for kernel side tinymt
- *@param filename name of parameter file generated by tinymt64dc
- *@param total_num total number of work items
- *@return buffer for kernel side tinymt
- */
-static Buffer get_param_buff(std::string& filename,
-			     int total_num)
-{
-#if defined(DEBUG)
-    cout << "get_rec_buff start" << endl;
-#endif
-    tinymt::file_reader fr(filename);
-    tinymt32wp_t * status_tbl = new tinymt32wp_t[total_num];
-    uint32_t mat1;
-    uint32_t mat2;
-    uint32_t tmat;
-    for (int i = 0; i < total_num; i++) {
-	fr.get(&mat1, &mat2, &tmat);
-	status_tbl[i].mat1 = mat1;
-	status_tbl[i].mat2 = mat2;
-	status_tbl[i].tmat = tmat;
-    }
-    Buffer status_buffer(context,
-			 CL_MEM_READ_ONLY,
-			 total_num * sizeof(tinymt32wp_t));
-    queue.enqueueWriteBuffer(status_buffer,
-			     CL_TRUE,
-			     0,
-			     total_num * sizeof(tinymt32wp_t),
-			     status_tbl);
-    delete[] status_tbl;
-#if defined(DEBUG)
-    cout << "get_rec_buff end" << endl;
-#endif
-    return status_buffer;
-}
-
 /**
  * parsing command line options
  *@param argc number of arguments
  *@param argv array of argument strings
  *@return true if errors are found in command line arguments
  */
-static bool parse_opt(int argc, char **argv) {
+static bool parse_opt(int argc, char **argv)
+{
 #if defined(DEBUG)
     cout << "parse_opt start" << endl;
 #endif
     bool error = false;
     std::string pgm = argv[0];
     errno = 0;
-    if (argc <= 4) {
+    if (argc <= 3) {
 	error = true;
     }
     while (!error) {
-	filename = argv[1];
-	group_num = strtol(argv[2], NULL, 10);
+	group_num = strtol(argv[1], NULL, 10);
 	if (errno) {
 	    error = true;
 	    cerr << "group num error!" << endl;
 	    cerr << strerror(errno) << endl;
 	    break;
 	}
-	local_num = strtol(argv[3], NULL, 10);
+	if (group_num <= 0) {
+	    error = true;
+	    cerr << "group num should be greater than zero." << endl;
+	    break;
+	}
+	local_num = strtol(argv[2], NULL, 10);
 	if (errno) {
 	    error = true;
 	    cerr << "local num error!" << endl;
 	    cerr << strerror(errno) << endl;
 	    break;
 	}
-	data_count = strtoll(argv[4], NULL, 10);
+	if (local_num <= 0) {
+	    error = true;
+	    cerr << "local num should be greater than zero." << endl;
+	    break;
+	}
+	data_count = strtol(argv[3], NULL, 10);
 	if (errno) {
 	    error = true;
 	    cerr << "data count error!" << endl;
 	    cerr << strerror(errno) << endl;
 	    break;
 	}
-	if (!filename.empty()) {
-	    ifstream ifs(filename.c_str());
-	    if (ifs) {
-		ifs.close();
-	    } else {
-		error = true;
-		cerr << "can't open file:" << filename << endl;
-		break;
-	    }
-	}
 	break;
     }
     if (error) {
 	cerr << pgm
-	     << " paramfile group-num local-num data-count" << endl;
-	cerr << "paramfile   parameter file of tinymt." << endl;
+	     << " group-num local-num data-count" << endl;
 	cerr << "group-num   group number of kernel call." << endl;
 	cerr << "local-num   local item number of kernel cal." << endl;
 	cerr << "data-count  generate random number count." << endl;

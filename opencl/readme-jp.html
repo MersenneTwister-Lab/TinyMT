@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html" />
+    <meta name="keywords" content="tiny mt, OpenCL" />
+    <title>TinyMT OpenCL Sample</title>
+    <style type="text/css">
+      TABLE.numeric TD {text-align:right}
+      DD.gray {color:gray}
+      body {margin-right:10%;margin-left:10%}
+    </style>
+  </head>
+  <body>
+    <h2>TinyMT OpenCL Sample</h2>
+    <h2>READ ME FIRST</h2>
+
+    <p>
+      TinyMT のOpenCL のサンプルです。Jump機能を含んでいます。
+      これはデータ並列カーネルのサンプルです。(NDRangeKernel呼び出しのサンプルです)
+    </p>
+    <p>cl.hpp を使用していますので、あなたのOpenCL環境にcl.hppが含まれていない
+      場合は、<a href="http://www.khronos.org/registry/cl/">
+	Khronos OpenCL API Registry</a>からcl.hppをダウンロードして
+      インクルードパスの通った適切なディレクトリに置いておく必要があります。
+      また、c99 の stdint.h と inttypes.h も使用しています。
+    </p>
+
+
+    <h2>使用方法</h2>
+    <h3>テストプログラムのコンパイル</h3>
+    <p>
+      OpenCL Sample プログラムは単独ではコンパイルできません。TinyMT のソースファイルが
+      必要です。また、TinyMT-jumpのソースファイルが必要です。</p>
+    <ol>
+      <li>アーカイブファイルを解凍します。</li>
+      <li>出来たディレクトリ(TinyMTOpenCL-src-xxx)の中のopencl-sampleディレクトリを
+	TinyMTのディクレクトリにコピーします。</li>
+<pre>
+TinyMT-src-xxx
+   +---dc
+   +---tinymt
+   +---jump
+   +---opencl
+</pre>
+       <li>コピーしたopencl-sampleディレクトリにcd します。</li>
+       <li>make all でサンプルプログラムとテストプログラムがコンパイルされます。</li>
+       <li>make check でテストが実行されます。</li>
+       <li>test- で始まるテストプログラムを使い、work group の数、local work item の
+	 数、生成する乱数の数を変えて実行することによって、
+	 ユーザー環境での疑似乱数生成速度を計測することができます。</li>
+    </ol>
+
+    <h3>jumpを使ったサンプルカーネルプログラム</h3>
+    <p>jump機能を使うとカーネルプログラムは単純になります。
+      サンプルプログラム<a href="sample32_jump.cl">sample32-jump.cl</a>では
+      モンテカルロ法による円周率の計算を行っています。1/4円の中に落ちた点の数から
+      円周率を計算していますが、OpenCLの基本的な技法を使って、まずワークグループ
+      内の点を集計して、それから全体の集計をするようになっています。
+      work groupを超えた同期ができないので、すべてのワークグループに渡る合計の計算と
+      最終的な円周率の計算はホスト側で行っています。</p>
+
+    <h3>License</h3>
+    <p>
+      このサンプルは商用利用を含むどんな目的にも自由に使用することができます。
+      詳細については、<a href="LICENSE.txt">LICENSE.txt</a>　を見てください。
+      これは三項 BSDライセンスです。
+    </p>
+  </body>
+</html>

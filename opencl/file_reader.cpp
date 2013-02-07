@@ -1,12 +1,12 @@
 /**
  * @file file_reader.cpp
  *
- * @brief Tiny Mersenne Twister only 127 bit internal state
+ * @brief Utility program for reading parameter files.
  *
  * @author Mutsuo Saito (Hiroshima University)
  * @author Makoto Matsumoto (The University of Tokyo)
  *
- * Copyright (C) 2010 Mutsuo Saito, Makoto Matsumoto,
+ * Copyright (C) 2013 Mutsuo Saito, Makoto Matsumoto,
  * Hiroshima University and The University of Tokyo.
  * All rights reserved.
  *
@@ -16,6 +16,12 @@
 namespace tinymt {
     using namespace std;
 
+    /**
+     * get parameters from prameter file of 32-bit tinymt
+     *@param mat1 mat1 parameter
+     *@param mat2 mat2 parameter
+     *@param tmat tmat parameter
+     */
     void file_reader::get(uint32_t * mat1, uint32_t * mat2, uint32_t * tmat) {
 	char buffer[bufsize];
 	ifstream ifs(filename.c_str(), ios::in);
@@ -36,6 +42,12 @@ namespace tinymt {
 	}
     }
 
+    /**
+     * get parameters from prameter file of 64-bit tinymt
+     *@param mat1 mat1 parameter
+     *@param mat2 mat2 parameter
+     *@param tmat tmat parameter
+     */
     void file_reader::get(uint32_t * mat1, uint32_t * mat2, uint64_t * tmat) {
 	char buffer[bufsize];
 	ifstream ifs(filename.c_str(), ios::in);
@@ -56,11 +68,21 @@ namespace tinymt {
 	}
     }
 
+    /**
+     * constructor from filename
+     *@param p_filename file name of prameter file
+     */
     file_reader::file_reader(const std::string& p_filename) {
 	filename = p_filename;
 	pos = 0;
     }
 
+    /**
+     * search nth next comma in string
+     *@param buffer string
+     *@param count specify nth comma
+     *@return pointer to next char of nth comma
+     */
     char * file_reader::search_comma_next(char * buffer, int count) {
 	for (int i = 0; i < bufsize; i++) {
 	    if (buffer[i] == '\0') {
@@ -80,32 +102,57 @@ namespace tinymt {
 	throw runtime_error("comma was not found");
 	};
 
+    /**
+     * get parameters from buffer
+     *@param mat1 mat1 parameter
+     *@param mat2 mat2 parameter
+     *@param tmat tmat parameter
+     */
     void file_reader::get_params(uint32_t *mat1, uint32_t *mat2, uint32_t *tmat,
 				 char *buffer) {
 	char * p;
 	errno = 0;
-	p = search_comma_next(buffer, 3);
-	*mat1 = strtoul(p, NULL, 16);
-	p = search_comma_next(buffer, 4);
-	*mat2 = strtoul(p, NULL, 16);
-	p = search_comma_next(buffer, 5);
-	*tmat = strtoul(p, NULL, 16);
+	for (;;) {
+	    if (buffer[0] == '\n' || buffer[0] == '\0') {
+		errno = 1;
+		break;
+	    }
+	    p = search_comma_next(buffer, 3);
+	    *mat1 = strtoul(p, NULL, 16);
+	    p = search_comma_next(buffer, 4);
+	    *mat2 = strtoul(p, NULL, 16);
+	    p = search_comma_next(buffer, 5);
+	    *tmat = strtoul(p, NULL, 16);
+	    break;
+	}
 	if (errno != 0) {
 	    cerr << "file format error:" << buffer << endl;
 	    throw runtime_error("file format error");
 	}
     }
 
+    /**
+     * get parameters from buffer
+     *@param mat1 mat1 parameter
+     *@param mat2 mat2 parameter
+     *@param tmat tmat parameter
+     */
     void file_reader::get_params(uint32_t *mat1, uint32_t *mat2, uint64_t *tmat,
 				 char *buffer) {
 	char * p;
 	errno = 0;
-	p = search_comma_next(buffer, 3);
-	*mat1 = strtoul(p, NULL, 16);
-	p = search_comma_next(buffer, 4);
-	*mat2 = strtoul(p, NULL, 16);
-	p = search_comma_next(buffer, 5);
-	*tmat = strtoull(p, NULL, 16);
+	for (;;) {
+	    if (buffer[0] == '\n' || buffer[0] == '\0') {
+		errno = 1;
+		break;
+	    }
+	    p = search_comma_next(buffer, 3);
+	    *mat1 = strtoul(p, NULL, 16);
+	    p = search_comma_next(buffer, 4);
+	    *mat2 = strtoul(p, NULL, 16);
+	    p = search_comma_next(buffer, 5);
+	    *tmat = strtoull(p, NULL, 16);
+	}
 	if (errno != 0) {
 	    cerr << "file format error:" << buffer << endl;
 	    throw runtime_error("file format error");

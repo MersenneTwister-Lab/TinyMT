@@ -27,7 +27,7 @@ std::string errorMessage;
 static int test(int argc, char * argv[]);
 
 /* ========================= */
-/* mtgp32 sample code        */
+/* tinymt32 sample code        */
 /* ========================= */
 /**
  * main

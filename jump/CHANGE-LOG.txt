@@ -1,0 +1,12 @@
+ver. 1.2
+-------
+header files are modified for including from C++.
+
+ver. 1.1
+-------
+document is refined.
+sampe is refined.
+
+ver. 1.0
+-------
+start

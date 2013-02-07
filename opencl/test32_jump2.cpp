@@ -1,5 +1,5 @@
 /**
- * Sample host program to generate a sequence
+ * Test host program to generate a sequence
  * using jump and parallel generation.
  *
  * 1. make initial state from a seed
@@ -28,10 +28,8 @@ typedef uint32_t uint;
 
 #include "tinymt32.h"
 #include "test_common.h"
-#include "parse_opt.h"
-extern "C" {
 #include "jump32.h"
-}
+
 using namespace std;
 using namespace cl;
 
@@ -48,7 +46,7 @@ cl::CommandQueue queue;
 std::string errorMessage;
 
 /* ========================= */
-/* Sample global variables
+/* global variables          */
 /* ========================= */
 static cl_int group_num;
 static cl_int local_num;
@@ -81,7 +79,7 @@ static void check_data(uint32_t * h_data, int num_data, int total_num);
 static bool parse_opt(int argc, char **argv);
 
 /* =========================
-   tiny sample code
+   tiny test code
    ========================= */
 /**
  * main
@@ -105,7 +103,7 @@ int main(int argc, char * argv[]) {
     return -1;
 }
 /**
- * sample main
+ * test main
  *@param argc number of arguments
  *@param argv array of arguments
  *@return 0 normal, -1 error
@@ -125,7 +123,7 @@ static int test(int argc, char * argv[]) {
     platforms = getPlatforms();
     devices = getDevices();
     context = getContext();
-#if defined(APPLE) || defined(__MACOSX) || defined(__APPLE__)
+#if defined(INCLUDE_IMPOSSIBLE)
     source = getSource("test32_jump2.cli");
 #else
     source = getSource("test32_jump2.cl");
@@ -177,16 +175,16 @@ static int test(int argc, char * argv[]) {
 }
 
 /**
- * prepare jump polynomial.
- * this step may be pre-computed in practical use.
- * @param group_num number of work groups
+ * prepare table of jump polynomial.
+ * @param total_num total number of work items
+ * @param step jump step
+ * @return buffer of jump table
  */
 static Buffer make_jump_table_buffer(cl_ulong total_num, uint64_t step)
 {
 #if defined(DEBUG)
     cout << "make_jump_table_buffer start" << endl;
 #endif
-//static const char * tinymt32j_characteristic = "d8524022ed8dff4a8dcc50c798faba43";
     uint64_t jump_table_size = 0;
     uint64_t mask = total_num;
     for (int i = 0; i < 64; i++) {
@@ -205,13 +203,9 @@ static Buffer make_jump_table_buffer(cl_ulong total_num, uint64_t step)
 	throw "jump table size too large";
     }
     uint32_t *jump_table = new uint32_t[4 * jump_table_size];
-    clock_t start;
-    clock_t end;
-    double time;
     uint64_t ustep = 0;
-    start = clock();
     f2_polynomial jump_poly;
-    for (int i = 0; i < jump_table_size; i++) {
+    for (uint64_t i = 0; i < jump_table_size; i++) {
 #if defined(DEBUG)
 	cout << " step:" << dec << step << endl;
 	cout << "ustep:" << dec << ustep << endl;
@@ -266,6 +260,13 @@ static Buffer make_jump_table_buffer(cl_ulong total_num, uint64_t step)
     delete[] jump_table;
     return buffer;
 }
+
+/**
+ * prepare a jump polynomial for specified step
+ *@param total_num total number of work items
+ *@param step jump step
+ *@return buffer of a jump polynomial
+ */
 static Buffer make_loop_jump_table_buffer(cl_ulong total_num, uint64_t step)
 {
 #if defined(DEBUG)
@@ -306,12 +307,13 @@ static Buffer make_loop_jump_table_buffer(cl_ulong total_num, uint64_t step)
 }
 
 /**
- * initialize mtgp status in device global memory
+ * initialize tinymt status in device global memory
  * using seed and fixed jump.
- * jump step is fixed to 3^162.
- *@param opt command line option
- *@param status_buffer mtgp status in device global memory
- *@param group number of group
+ * jump step is fixed to 3^40.
+ *@param status_buffer tinymt status in device global memory
+ *@param jump_table_buffer jump table in constant memory
+ *@param local_num number of local work items.
+ *@param total_num total number work items.
  *@param seed seed for initialization
  */
 static void initialize_by_seed(Buffer& status_buffer,
@@ -348,9 +350,11 @@ static void initialize_by_seed(Buffer& status_buffer,
 }
 
 /**
- * jump mtgp status in device global memory
- *@param status_buffer mtgp status in device global memory
- *@param group number of group
+ * jump tinymt status in device global memory
+ *@param status_buffer tinymt status in device global memory
+ *@param jump_table_buffer buffer of a jump polynomial
+ *@param local_num number of local work items
+ *@param total_num total number of work items
  */
 static void status_jump(Buffer& status_buffer,
 			Buffer& jump_table_buffer,
@@ -385,8 +389,9 @@ static void status_jump(Buffer& status_buffer,
 
 /**
  * generate 32 bit unsigned random numbers in device global memory
- *@param group_num number of groups for execution
- *@param status_buffer mtgp status in device global memory
+ *@param status_buffer internal state of kernel side tinymt
+ *@param local_num number of local work items
+ *@param total_num total number of work items
  *@param data_size number of data to generate
  */
 static void generate_uint32(Buffer& status_buffer,
@@ -454,15 +459,22 @@ static void generate_uint32(Buffer& status_buffer,
 /* ==============
  * check programs
  * ==============*/
+
+/**
+ * initialize host side tinymt structure for check
+ *@param tiny host side tinymt
+ *@param seed seed for initialization
+ *@return 0 if normal end
+ */
 static int init_check_data(tinymt32_t * tiny,
 			   uint32_t seed)
 {
 #if defined(DEBUG)
     cout << "init_check_data start" << endl;
 #endif
-    tiny->mat1 = 0x8f7011eeU;
-    tiny->mat2 = 0xfc78ff1fU;
-    tiny->tmat = 0x3793fdffU;
+    tiny->mat1 = TINYMT32J_MAT1;
+    tiny->mat2 = TINYMT32J_MAT2;
+    tiny->tmat = TINYMT32J_TMAT;
     tinymt32_init(tiny, seed);
 #if defined(DEBUG)
     cout << "init_check_data end" << endl;
@@ -471,6 +483,12 @@ static int init_check_data(tinymt32_t * tiny,
 }
 
 
+/**
+ * compare host side generation and kernel side generation
+ *@param h_data host side copy of numbers generated by kernel side
+ *@param num_data size of h_data
+ *@param total_num total number of work items
+ */
 static void check_data(uint32_t * h_data, int num_data, int total_num)
 {
 #if defined(DEBUG)
@@ -508,6 +526,11 @@ static void check_data(uint32_t * h_data, int num_data, int total_num)
 #endif
 }
 
+/**
+ * get buffer for kernel side tinymt
+ *@param total_num total number of work items
+ *@return buffer for kernel side tinymt
+ */
 static Buffer get_status_buff(int total_num)
 {
 #if defined(DEBUG)
@@ -522,12 +545,17 @@ static Buffer get_status_buff(int total_num)
     return status_buffer;
 }
 
+/**
+ * parsing command line options
+ *@param argc number of arguments
+ *@param argv array of argument strings
+ *@return true if errors are found in command line arguments
+ */
 static bool parse_opt(int argc, char **argv)
 {
 #if defined(DEBUG)
     cout << "parse_opt start" << endl;
 #endif
-    int c;
     bool error = false;
     std::string pgm = argv[0];
     errno = 0;

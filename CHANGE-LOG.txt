@@ -1,3 +1,9 @@
+ver. 1.0.2
+-------
+random_util.hpp in dc/include is changed not to include openssl
+header.
+header files in tinymt are changed to fit including from C++.
+
 ver. 1.0.1
 -------
 fix small bugs in check64.c and parse_opt.cpp.

@@ -9,13 +9,10 @@
  * This program generates 32-bit unsigned integers.
  * The period of generated integers is 2<sup>127</sup>-1.
  *
- * This also generates single precision floating point numbers
- * uniformly distributed in the range [1, 2). (float r; 1.0 <= r < 2.0)
- *
  * @author Mutsuo Saito (Hiroshima University)
  * @author Makoto Matsumoto (The University of Tokyo)
  *
- * Copyright (C) 2012 Mutsuo Saito, Makoto Matsumoto,
+ * Copyright (C) 2013 Mutsuo Saito, Makoto Matsumoto,
  * Hiroshima University and The University of Tokyo.
  * All rights reserved.
  *
@@ -33,8 +30,9 @@ __constant uint tinymt32_mask = 0x7fffffff;
 __constant uint tinymt32_float_mask = 0x3f800000;
 
 /**
- * The function of the recursion formula calculation.
- *
+ * This function generates unsigned 32-bit integers.
+ *@param tiny tinymt internal state with parameters
+ *@return unsigned 32-bit integer
  */
 inline static uint
 tinymt32_uint32(tinymt32wp_t * tiny)
@@ -62,8 +60,10 @@ tinymt32_uint32(tinymt32wp_t * tiny)
 }
 
 /**
- * The function of the recursion formula calculation.
- *
+ * This function generates single floating point numbers uniformly
+ * distribute in the range [1, 2).
+ *@param tiny tinymt internal state with parameters
+ *@return single floating point number
  */
 inline static float
 tinymt32_single12(tinymt32wp_t * tiny)
@@ -92,8 +92,10 @@ tinymt32_single12(tinymt32wp_t * tiny)
 }
 
 /**
- * The function of the recursion formula calculation.
- *
+ * This function generates single floating point numbers uniformly
+ * distribute in the range [0, 1).
+ *@param tiny tinymt internal state with parameters
+ *@return single floating point number
  */
 inline static float
 tinymt32_single01(tinymt32wp_t * tiny)
@@ -178,7 +180,7 @@ tinymt32_init(tinymt32wp_t * tiny, uint seed)
 /**
  * This function initializes the internal state array,
  * with an array of 32-bit unsigned integers used as seeds
- * @param tinymt tinymt state vector.
+ * @param tiny tinymt state vector.
  * @param init_key the array of 32-bit integers, used as a seed.
  * @param key_length the length of init_key.
  */
@@ -252,9 +254,9 @@ tinymt32_init_by_array(tinymt32wp_t * tiny,
 }
 
 /**
- * Read the internal state vector from kernel I/O data, and
- * put them into shared memory.
- *
+ * Read the internal state vector from kernel I/O data
+ * @param tiny tinymt internal state with parameters
+ * @param g_status state vectors in global memory
  */
 inline static void
 tinymt32_status_read(tinymt32wp_t * tiny,
@@ -271,9 +273,9 @@ tinymt32_status_read(tinymt32wp_t * tiny,
 }
 
 /**
- * Read the internal state vector from shared memory, and
- * write them into kernel I/O data.
- *
+ * Write the internal state vector to global memory.
+ * @param g_status state vectors in global memory
+ * @param tiny tinymt internal state with parameters.
  */
 inline static void
 tinymt32_status_write(__global tinymt32wp_t * g_status,

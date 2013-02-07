@@ -8,7 +8,7 @@
  * @author Mutsuo Saito (Hiroshima University)
  * @author Makoto Matsumoto (The University of Tokyo)
  *
- * Copyright (C) 2011 Mutsuo Saito, Makoto Matsumoto,
+ * Copyright (C) 2011, 2013 Mutsuo Saito, Makoto Matsumoto,
  * Hiroshima University and The University of Tokyo.
  * All rights reserved.
  *
@@ -22,10 +22,13 @@
 #include <inttypes.h>
 #include <stdint.h>
 #include <stdexcept>
-#include <openssl/sha.h>
 #include <tr1/memory>
 
 #include <NTL/GF2X.h>
+
+#if defined(USE_SHA)
+#include <openssl/sha.h>
+#endif
 
 #define bit_size(tp) (static_cast<int>(sizeof(tp) * 8))
 
@@ -127,6 +130,7 @@ namespace MTToolBox {
 	}
     }
 
+#if defined(USE_SHA)
     /**
      * calculate the SHA1 digest of F2 polynomial. The coefficients of
      * the polynomial are changed to the string of "0" and "1", which
@@ -161,7 +165,7 @@ namespace MTToolBox {
 	}
 	ss >> str;
     }
-
+#endif
 
     /**
      * calculate the position of most right 1, or

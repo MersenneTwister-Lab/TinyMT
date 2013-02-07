@@ -22,11 +22,12 @@
 
 /**
  * kernel function.
- * This function initialize internal state of tinymt32.
+ * This function initialize internal state of tinymt32 and jump
+ * using id of work item.
  *
- * @param[in,out] d_status kernel I/O data
- * @param[out] d_data output
- * @param[in] size number of output data requested.
+ * @param d_status internal state of kernel side tinymt
+ * @param jump_table table of jump polynomials
+ * @param seed seed of initialization
  */
 __kernel void
 tinymt_init_seed_kernel(__global tinymt32j_t * d_status,
@@ -50,19 +51,18 @@ tinymt_init_seed_kernel(__global tinymt32j_t * d_status,
  * kernel function.
  * This function initialize internal state of tinymt32.
  *
- * @param[in,out] d_status kernel I/O data
- * @param[out] d_data output
- * @param[in] size number of output data requested.
+ * @param d_status internal state of kernel side tinymt
+ * @param jump_array a jump polynomial
  */
 __kernel void
 tinymt_jump_kernel(__global tinymt32j_t * d_status,
-		   __constant uint * jump_table)
+		   __constant uint * jump_array)
 {
     tinymt32j_t tiny;
     size_t gid = tinymt_get_sequential_id();
 
     tinymt32j_status_read(&tiny, d_status);
-    tinymt32j_jump_by_array(&tiny, jump_table);
+    tinymt32j_jump_by_array(&tiny, jump_array);
     tinymt32j_status_write(d_status, &tiny);
 }
 
@@ -70,9 +70,9 @@ tinymt_jump_kernel(__global tinymt32j_t * d_status,
  * kernel function.
  * This function generates 32-bit unsigned integers in d_data
  *
- * @param[in,out] d_status kernel I/O data
- * @param[out] d_data output
- * @param[in] size number of output data requested.
+ * @param d_status internal state of kernel side tinymt
+ * @param d_data output
+ * @param size number of output data requested.
  */
 __kernel void
 tinymt_uint32_kernel(__global tinymt32j_t * d_status,
@@ -85,7 +85,6 @@ tinymt_uint32_kernel(__global tinymt32j_t * d_status,
 
     tinymt32j_status_read(&tiny, d_status);
     for (int i = 0; i < size; i++) {
-	//d_data[global_size * id + i] = tinymt32j_uint32(&tiny);
 	d_data[size * id + i] = tinymt32j_uint32(&tiny);
     }
     tinymt32j_status_write(d_status, &tiny);

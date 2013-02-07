@@ -24,9 +24,8 @@
  * kernel function.
  * This function initialize internal state of tinymt32.
  *
- * @param[in,out] d_status kernel I/O data
- * @param[out] d_data output
- * @param[in] size number of output data requested.
+ * @param d_status internal state of kernel side tinymt
+ * @param seed seed for initialization
  */
 __kernel void
 tinymt_init_seed_kernel(__global tinymt32j_t * d_status,
@@ -35,9 +34,6 @@ tinymt_init_seed_kernel(__global tinymt32j_t * d_status,
     tinymt32j_t tiny;
 
     tinymt32j_init_jump(&tiny, seed);
-#if defined(DEBUG)
-//    tiny.tmat = seed + id;
-#endif
     tinymt32j_status_write(d_status, &tiny);
 }
 
@@ -45,9 +41,9 @@ tinymt_init_seed_kernel(__global tinymt32j_t * d_status,
  * kernel function.
  * This function initialize internal state of tinymt32.
  *
- * @param[in,out] d_status kernel I/O data
- * @param[out] d_data output
- * @param[in] size number of output data requested.
+ * @param d_status internal state of kernel side tinymt
+ * @param seeds array of seeds for initialization
+ * @param length length of seeds
  */
 __kernel void
 tinymt_init_array_kernel(__global tinymt32j_t * d_status,
@@ -70,9 +66,9 @@ tinymt_init_array_kernel(__global tinymt32j_t * d_status,
  * kernel function.
  * This function generates 32-bit unsigned integers in d_data
  *
- * @param[in,out] d_status kernel I/O data
- * @param[out] d_data output
- * @param[in] size number of output data requested.
+ * @param d_status internal state of kernel side tinymt
+ * @param d_data output
+ * @param size number of output data requested.
  */
 __kernel void
 tinymt_uint32_kernel(__global tinymt32j_t * d_status,
@@ -92,11 +88,11 @@ tinymt_uint32_kernel(__global tinymt32j_t * d_status,
 
 /**
  * kernel function.
- * This function generates 32-bit unsigned integers in d_data
+ * This function generates floating points in the range [1, 2)
  *
- * @param[in,out] d_status kernel I/O data
- * @param[out] d_data output
- * @param[in] size number of output data requested.
+ * @param d_status internal state of kernel side tinymt
+ * @param d_data output
+ * @param size number of output data requested.
  */
 __kernel void
 tinymt_single12_kernel(__global tinymt32j_t * d_status,
@@ -116,11 +112,11 @@ tinymt_single12_kernel(__global tinymt32j_t * d_status,
 
 /**
  * kernel function.
- * This function generates 32-bit unsigned integers in d_data
+ * This function generates floating points in the range [0, 1).
  *
- * @param[in,out] d_status kernel I/O data
- * @param[out] d_data output
- * @param[in] size number of output data requested.
+ * @param d_status internal state of kernel side tinymt
+ * @param d_data output
+ * @param size number of output data requested.
  */
 __kernel void
 tinymt_single01_kernel(__global tinymt32j_t * d_status,

@@ -8,7 +8,7 @@
  * @author Mutsuo Saito (Hiroshima University)
  * @author Makoto Matsumoto (The University of Tokyo)
  *
- * Copyright (C) 2010 Mutsuo Saito, Makoto Matsumoto,
+ * Copyright (C) 2013 Mutsuo Saito, Makoto Matsumoto,
  * Hiroshima University and The University of Tokyo.
  * All rights reserved.
  *

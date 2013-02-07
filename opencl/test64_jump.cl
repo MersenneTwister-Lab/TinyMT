@@ -3,7 +3,8 @@
  *
  * @brief Test Program for openCL 1.2
  *
- * This program generates 64-bit unsigned integers.
+ * This program generates 64-bit unsigned integers using a parameter set
+ * and jump function.
  * The period of generated integers is 2<sup>127</sup>-1.
  *
  * This also generates double precision floating point numbers
@@ -23,10 +24,11 @@
 /**
  * kernel function.
  * This function initialize internal state of tinymt64.
+ * jump is done in function tinymt64j_init_jump according to
+ * an id of work item.
  *
- * @param[in,out] d_status kernel I/O data
- * @param[out] d_data output
- * @param[in] size number of output data requested.
+ * @param d_status internal state of kernel side tinymt
+ * @param seed seed for initialization
  */
 __kernel void
 tinymt_init_seed_kernel(__global tinymt64j_t * d_status,
@@ -35,24 +37,23 @@ tinymt_init_seed_kernel(__global tinymt64j_t * d_status,
     tinymt64j_t tiny;
 
     tinymt64j_init_jump(&tiny, seed);
-#if defined(DEBUG)
-//    tiny.tmat = seed + id;
-#endif
     tinymt64j_status_write(d_status, &tiny);
 }
 
 /**
  * kernel function.
  * This function initialize internal state of tinymt64.
+ * jump is done in function tinymt64j_init_jump according to
+ * an id of work item.
  *
- * @param[in,out] d_status kernel I/O data
- * @param[out] d_data output
- * @param[in] size number of output data requested.
+ * @param d_status internal state of kernel side tinymt
+ * @param seeds seed for initialization
+ * @param length length of seeds
  */
 __kernel void
 tinymt_init_array_kernel(__global tinymt64j_t * d_status,
 			 __global ulong * seeds,
-			int length)
+			 int length)
 {
     tinymt64j_t tiny;
     ulong local_seeds[10];
@@ -70,9 +71,9 @@ tinymt_init_array_kernel(__global tinymt64j_t * d_status,
  * kernel function.
  * This function generates 64-bit unsigned integers in d_data
  *
- * @param[in,out] d_status kernel I/O data
- * @param[out] d_data output
- * @param[in] size number of output data requested.
+ * @param d_status internal state of kernel side tinymt
+ * @param d_data output
+ * @param size number of output data requested.
  */
 __kernel void
 tinymt_uint64_kernel(__global tinymt64j_t * d_status,
@@ -93,11 +94,11 @@ tinymt_uint64_kernel(__global tinymt64j_t * d_status,
 #if defined(HAVE_DOUBLE)
 /**
  * kernel function.
- * This function generates 64-bit unsigned integers in d_data
+ * This function generates double floats in the range [1,2)
  *
- * @param[in,out] d_status kernel I/O data
- * @param[out] d_data output
- * @param[in] size number of output data requested.
+ * @param d_status internal state of kernel side tinymt
+ * @param d_data output
+ * @param size number of output data requested.
  */
 __kernel void
 tinymt_double12_kernel(__global tinymt64j_t * d_status,
@@ -117,11 +118,11 @@ tinymt_double12_kernel(__global tinymt64j_t * d_status,
 
 /**
  * kernel function.
- * This function generates 64-bit unsigned integers in d_data
+ * This function generates double floats in the range [0, 1).
  *
- * @param[in,out] d_status kernel I/O data
- * @param[out] d_data output
- * @param[in] size number of output data requested.
+ * @param d_status internal state of kernel side tinymt
+ * @param d_data output
+ * @param size number of output data requested.
  */
 __kernel void
 tinymt_double01_kernel(__global tinymt64j_t * d_status,

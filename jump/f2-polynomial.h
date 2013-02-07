@@ -22,6 +22,10 @@
 #include <stdint.h>
 #include <inttypes.h>
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 /**
  * Polynomial over F<sub>2</sub>, whose degree is equal to or less than 128.
  * LSB of ar[0], i.e. ar[0] & 1, represent constant
@@ -43,4 +47,8 @@ void calculate_jump_polynomial(f2_polynomial *jump_poly,
 			       uint64_t lower_step,
 			       uint64_t upper_step,
 			       const char * poly_str);
+#if defined(__cplusplus)
+}
+#endif
+
 #endif

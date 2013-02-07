@@ -23,6 +23,10 @@
  */
 #include "tinymt.clh"
 #include "tinymt64_jump_table.clh"
+
+#if !defined(UINT64_C)
+#define UINT64_C(x) (x ## UL)
+#endif
 #include "tinymt64def.h"
 
 #if defined(HAVE_DOUBLE)
@@ -35,19 +39,12 @@ __constant int tinymt64j_sh0 = 12;
 __constant int tinymt64j_sh1 = 11;
 __constant int tinymt64j_sh8 = 8;
 __constant ulong tinymt64j_mask = 0x7fffffffffffffffUL;
-__constant uint tinymt64j_mat1  = 0xfa051f40U;
-__constant ulong tinymt64j_mat2 = 0xffd0fff4UL;
-__constant ulong tinymt64j_tmat = 0x58d02ffeffbfffbcUL;
+__constant uint tinymt64j_mat1  = TINYMT64J_MAT1;
+__constant ulong tinymt64j_mat2 = TINYMT64J_MAT2;
+__constant ulong tinymt64j_tmat = TINYMT64J_TMAT;
 __constant ulong tinymt64j_tmat_double
-  = (0x58d02ffeffbfffbcUL >> 12) | 0x3ff0000000000000UL;
+  = (TINYMT64J_TMAT >> 12) | 0x3ff0000000000000UL;
 
-/**
- * Step between global id x and x + 1.
- * This number is the largest 3<sup>x</sup> smaller than 2<sup>64</sup>.
- * As far as a work item consumes random numbers less than 3<sup>40</sup>,
- * the jump defined in this file will work well.
- */
-__constant ulong tinymt64j_mag = 12157665459056928801UL;
 inline static void
 tinymt64j_add(tinymt64j_t * dist, tinymt64j_t * src);
 inline static void
@@ -82,8 +79,8 @@ tinymt64j_jump_by_polynomial(tinymt64j_t *tiny,
 
 /**
  * Addition of internal state
- * @param dest destination (changed)
- * @param src source (not changed)
+ * @param dest destination (change)
+ * @param src source (not change)
  */
 inline static void
 tinymt64j_add(tinymt64j_t * dest, tinymt64j_t * src)
@@ -251,7 +248,7 @@ tinymt64j_init_seed(tinymt64j_t *tiny, ulong seed)
 /**
  * This function initializes the internal state array,
  * with an array of 64-bit unsigned integers used as seeds
- * @param tinymt tinymt state vector.
+ * @param tiny tinymt state vector.
  * @param init_key the array of 64-bit integers, used as a seed.
  * @param key_length the length of init_key.
  */
@@ -325,7 +322,7 @@ tinymt64j_init_by_array(tinymt64j_t * tiny,
  * This function can use multiple time for the tinymt64j structure.
  * @param tiny tinymt64j structure, overwritten by new state after calling
  * this function.
- * @param jump_poly the jump polynomial calculated by
+ * @param jump_array the jump polynomial calculated by
  * tinymt64j_calculate_jump_polynomial.
  */
 inline static void

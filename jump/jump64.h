@@ -1,6 +1,10 @@
 #ifndef JUMP64_H
 #define JUMP64_H
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 #include "f2-polynomial.h"
 #include "tinymt64.h"
 
@@ -10,4 +14,8 @@ void tinymt64_jump(tinymt64_t *tiny,
 		   const char * poly_str);
 void tinymt64_jump_by_polynomial(tinymt64_t *tiny,
 				 f2_polynomial * jump_poly);
+#if defined(__cplusplus)
+}
+#endif
+
 #endif

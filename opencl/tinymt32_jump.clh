@@ -23,7 +23,6 @@
  */
 #include "tinymt.clh"
 #include "tinymt32_jump_table.clh"
-//#include "f2_polynomial.clh"
 #include "tinymt32def.h"
 
 #define TINYMT32J_MIN_LOOP 8
@@ -33,23 +32,11 @@ __constant int tinymt32j_sh0 = 1;
 __constant int tinymt32j_sh1 = 10;
 __constant int tinymt32j_sh8 = 8;
 __constant uint tinymt32j_mask = 0x7fffffffU;
-__constant uint tinymt32j_mat1 = 0x8f7011eeU;
-__constant uint tinymt32j_mat2 = 0xfc78ff1fU;
-__constant uint tinymt32j_tmat = 0x3793fdffU;
-__constant uint tinymt32j_tmat_float = (0x3793fdffU >> 9) | 0x3f800000U;
+__constant uint tinymt32j_mat1 = TINYMT32J_MAT1;
+__constant uint tinymt32j_mat2 = TINYMT32J_MAT2;
+__constant uint tinymt32j_tmat = TINYMT32J_TMAT;
+__constant uint tinymt32j_tmat_float = (TINYMT32J_TMAT >> 9) | 0x3f800000U;
 
-/**
- * Step between global id x and x + 1.
- * This number is the largest 3<sup>x</sup> smaller than 2<sup>64</sup>.
- * As far as a work item consumes random numbers less than 3<sup>40</sup>,
- * the jump defined in this file will work well.
- */
-__constant ulong tinymt32j_mag = 12157665459056928801UL;
-//__constant char tinymt32j_characteristic[] =
-//"d8524022ed8dff4a8dcc50c798faba43";
-
-//inline static void
-//tinymt32j_mul(ulong *zh, ulong *zl, ulong x, ulong y);
 inline static void
 tinymt32j_add(tinymt32j_t * dist, tinymt32j_t * src);
 inline static void
@@ -82,36 +69,6 @@ inline static void
 tinymt32j_jump_by_polynomial(tinymt32j_t *tiny,
 			     uint jump_array[4]);
 
-#if 0
-/**
- * This is lazy multiplication function 64bit x 64bit -> 128bit
- * @param zh result high 64bit
- * @param zl result low 64bit
- * @param x 64-bit number
- * @param y 64-bit number
- */
-inline static void
-tinymt32j_mul(ulong *zh, ulong *zl, ulong x, ulong y)
-{
-    uint xl = x & 0xffffffffU;
-    uint xh = x >> 32;
-    uint yl = y & 0xffffffffU;
-    uint yh = y >> 32;
-    ulong tmp;
-    *zl = (ulong)xl * (ulong)yl;
-    tmp = (ulong)xh * (ulong)yl;
-    *zh = tmp >> 32;
-    tmp &= 0xffffffffU;
-    tmp += (ulong)xl * (ulong)yh;
-    *zh += tmp >> 32;
-    tmp &= 0xffffffffU;
-    tmp += *zl >> 32;
-    *zl &= 0xffffffffU;
-    *zl = *zl+ (tmp << 32);
-    *zh += tmp >> 32;
-    *zh += (ulong)xh * (ulong)yh;
-}
-#endif
 /**
  * Addition of internal state
  * @param dest destination (changed)
@@ -304,7 +261,7 @@ tinymt32j_init_seed(tinymt32j_t *tiny, uint seed)
 /**
  * This function initializes the internal state array,
  * with an array of 32-bit unsigned integers used as seeds
- * @param tinymt tinymt state vector.
+ * @param tiny tinymt state vector.
  * @param init_key the array of 32-bit integers, used as a seed.
  * @param key_length the length of init_key.
  */
@@ -383,7 +340,7 @@ tinymt32j_init_by_array(tinymt32j_t * tiny,
  * This function can use multiple time for the tinymt32j structure.
  * @param tiny tinymt32j structure, overwritten by new state after calling
  * this function.
- * @param jump_poly the jump polynomial calculated by
+ * @param jump_array the jump polynomial calculated by
  * tinymt32j_calculate_jump_polynomial.
  */
 inline static void

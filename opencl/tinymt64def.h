@@ -3,14 +3,7 @@
 /**
  * @file tinymt64def.h
  *
- * @brief Sample Program for openCL 1.2
- *
- * tinymt64
- * This program generates 32-bit unsigned integers.
- * The period of generated integers is 2<sup>127</sup>-1.
- *
- * This also generates double precision floating point numbers
- * uniformly distributed in the range [1, 2). (double r; 1.0 <= r < 2.0)
+ * @brief Common definitions in host and kernel for 64-bit tinymt.
  *
  * @author Mutsuo Saito (Hiroshima University)
  * @author Makoto Matsumoto (The University of Tokyo)
@@ -40,5 +33,9 @@ typedef struct TINYMT64J_T {
     ulong s0;
     ulong s1;
 } tinymt64j_t;
+
+#define TINYMT64J_MAT1 0xfa051f40U
+#define TINYMT64J_MAT2 0xffd0fff4U;
+#define TINYMT64J_TMAT UINT64_C(0x58d02ffeffbfffbc)
 
 #endif

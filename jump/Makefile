@@ -13,7 +13,7 @@ CPPOPT = -Wall -Wextra -O3 $(M64) $(INC) -I../tinymt \
 CPP = g++ $(CPPOPT)
 
 # comment out next line if you are using NTL with gf2x
-NTL_OPT = -lgf2x
+# NTL_OPT = -lgf2x
 # comment out next line if you are using NTL with gmp
 # NTL_OPT = -lgmp
 
@@ -31,9 +31,10 @@ FILES = Makefile \
 	f2-polynomial.h \
 	readme.html \
 	readme-jp.html \
-	sample.c
+	sample.c \
+	CHANGE-LOG.txt
 
-VERSION = 1.1
+VERSION = 1.2
 DIR = TinyMTJump-src-${VERSION}
 
 all: jump_test32 jump_test64

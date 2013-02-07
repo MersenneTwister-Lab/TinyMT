@@ -5,21 +5,21 @@
 #define CL_USE_DEPRECATED_OPENCL_1_1_APIS
 #define __CL_ENABLE_EXCEPTIONS
 
-#include "opencl_tools.hpp"
-typedef uint32_t uint;
-#include "tinymt32def.h"
-
 #include <cstddef>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
 #include <string>
 #include <float.h>
+#include <errno.h>
+#include <stdint.h>
+#include <inttypes.h>
 
 typedef uint32_t uint;
+#include "opencl_tools.hpp"
+#include "tinymt32def.h"
 #include "tinymt32.h"
 #include "test_common.h"
-#include "parse_opt.h"
 #include "file_reader.h"
 
 using namespace std;
@@ -42,6 +42,12 @@ std::string errorMessage;
    ========================= */
 static tinymt32_t * tinymt32;
 
+static std::string filename;
+static int group_num;
+static int local_num;
+static int data_count;
+
+static bool parse_opt(int argc, char **argv);
 static int init_check_data(tinymt32_t tinymt32[],
 			   int total_num,
 			   uint32_t seed);
@@ -87,7 +93,7 @@ static void generate_single01(Buffer& tinymt_status,
 static int test(int argc, char * argv[]);
 
 /* ========================= */
-/* tinymt32 sample code        */
+/* tinymt32 test code        */
 /* ========================= */
 /**
  * main
@@ -112,7 +118,7 @@ int main(int argc, char * argv[])
 }
 
 /**
- * sample main
+ * test main
  *@param argc number of arguments
  *@param argv array of arguments
  *@return 0 normal, -1 error
@@ -122,8 +128,7 @@ static int test(int argc, char * argv[])
 #if defined(DEBUG)
     cout << "test start" << endl;
 #endif
-    options opt;
-    if (!parse_opt(opt, argc, argv)) {
+    if (!parse_opt(argc, argv)) {
 	return -1;
     }
     // OpenCL setup
@@ -133,7 +138,7 @@ static int test(int argc, char * argv[])
     platforms = getPlatforms();
     devices = getDevices();
     context = getContext();
-#if defined(APPLE) || defined(__MACOSX) || defined(__APPLE__)
+#if defined(INCLUDE_IMPOSSIBLE)
     source = getSource("test32.cli");
 #else
     source = getSource("test32.cl");
@@ -147,38 +152,38 @@ static int test(int argc, char * argv[])
 #if defined(DEBUG)
     cout << "openCL setup end" << endl;
 #endif
-    int total_num = opt.group_num * opt.local_num;
+    int total_num = group_num * local_num;
     int max_group_size = getMaxGroupSize();
-    if (opt.group_num > max_group_size) {
+    if (group_num > max_group_size) {
 	cout << "group_num greater than max value("
 	     << max_group_size << ")"
 	     << endl;
 	return -1;
     }
-    Buffer tinymt_status = get_param_buff(opt.filename, total_num);
+    Buffer tinymt_status = get_param_buff(filename, total_num);
     // initialize by seed
     // generate uint32_t
     tinymt32 = new tinymt32_t[total_num];
-    make_tinymt(opt.filename, total_num);
+    make_tinymt(filename, total_num);
     init_check_data(tinymt32, total_num, 1234);
-    initialize_by_seed(tinymt_status, total_num, opt.local_num, 1234);
+    initialize_by_seed(tinymt_status, total_num, local_num, 1234);
     for (int i = 0; i < 2; i++) {
 	generate_uint32(tinymt_status, total_num,
-			opt.local_num, opt.data_count);
+			local_num, data_count);
     }
 
     // initialize by array
     // generate single float
     uint32_t seed_array[5] = {1, 2, 3, 4, 5};
-    make_tinymt(opt.filename, total_num);
+    make_tinymt(filename, total_num);
     init_check_data_array(tinymt32, total_num, seed_array, 5);
     initialize_by_array(tinymt_status, total_num,
-			opt.local_num, seed_array, 5);
+			local_num, seed_array, 5);
     for (int i = 0; i < 1; i++) {
 	generate_single12(tinymt_status, total_num,
-			  opt.local_num, opt.data_count);
+			  local_num, data_count);
 	generate_single01(tinymt_status, total_num,
-			  opt.local_num, opt.data_count);
+			  local_num, data_count);
     }
     delete[] tinymt32;
     return 0;
@@ -187,8 +192,9 @@ static int test(int argc, char * argv[])
 /**
  * initialize tinymt status in device global memory
  * using 1 parameter for 1 generator.
- *@param tinymt_status device global memories
- *@param group number of group
+ *@param tinymt_status internal state of kernel side tinymt
+ *@param total total number of work itmes
+ *@param local_item number of local work items
  *@param seed seed for initialization
  */
 static void initialize_by_seed(Buffer& tinymt_status,
@@ -239,8 +245,9 @@ static void initialize_by_seed(Buffer& tinymt_status,
 /**
  * initialize tinymt status in device global memory
  * using 1 parameter for 1 generator.
- *@param tinymt_status device global memories
- *@param group number of group
+ *@param tinymt_status internal state of kernel side tinymt
+ *@param total total number of work itmes
+ *@param local_item number of local work items
  *@param seed_array seeds for initialization
  *@param seed_size size of seed_array
  */
@@ -290,8 +297,9 @@ static void initialize_by_array(Buffer& tinymt_status,
 
 /**
  * generate 32 bit unsigned random numbers in device global memory
- *@param tinymt_status device global memories
- *@param total_num number of groups for execution
+ *@param tinymt_status internal state of kernel side tinymt
+ *@param total_num total number of work itmes
+ *@param local_num number of local work items
  *@param data_size number of data to generate
  */
 static void generate_uint32(Buffer& tinymt_status,
@@ -347,8 +355,9 @@ static void generate_uint32(Buffer& tinymt_status,
 /**
  * generate single precision floating point numbers in the range [1, 2)
  * in device global memory
- *@param tinymt_status device global memories
- *@param total_num number of groups for execution
+ *@param tinymt_status internal state of kernel side tinymt
+ *@param total_num total number of work itmes
+ *@param local_num number of local work items
  *@param data_size number of data to generate
  */
 static void generate_single12(Buffer& tinymt_status,
@@ -395,8 +404,9 @@ static void generate_single12(Buffer& tinymt_status,
 /**
  * generate single precision floating point numbers in the range [0, 1)
  * in device global memory
- *@param tinymt_status device global memories
- *@param total_num number of groups for execution
+ *@param tinymt_status internal state of kernel side tinymt
+ *@param total_num total number of work itmes
+ *@param local_num number of local work items
  *@param data_size number of data to generate
  */
 static void generate_single01(Buffer& tinymt_status,
@@ -510,7 +520,6 @@ static void check_data(uint32_t * h_data,
 	int count = 0;
 	for (int j = 0; j < size; j++) {
 	    uint32_t r = tinymt32_generate_uint32(&tinymt32[i]);
-	    //if ((h_data[i * size + j] != r) && disp_flg) {
 	    if ((h_data[j * total_num + i] != r) && disp_flg) {
 		cout << "mismatch i = " << dec << i
 		     << " j = " << dec << j
@@ -727,4 +736,64 @@ static Buffer get_param_buff(std::string& filename,
     cout << "get_rec_buff end" << endl;
 #endif
     return status_buffer;
+}
+
+static bool parse_opt(int argc, char **argv) {
+#if defined(DEBUG)
+    cout << "parse_opt start" << endl;
+#endif
+    bool error = false;
+    std::string pgm = argv[0];
+    errno = 0;
+    if (argc <= 4) {
+	error = true;
+    }
+    while (!error) {
+	filename = argv[1];
+	group_num = strtol(argv[2], NULL, 10);
+	if (errno) {
+	    error = true;
+	    cerr << "group num error!" << endl;
+	    cerr << strerror(errno) << endl;
+	    break;
+	}
+	local_num = strtol(argv[3], NULL, 10);
+	if (errno) {
+	    error = true;
+	    cerr << "local num error!" << endl;
+	    cerr << strerror(errno) << endl;
+	    break;
+	}
+	data_count = strtol(argv[4], NULL, 10);
+	if (errno) {
+	    error = true;
+	    cerr << "data count error!" << endl;
+	    cerr << strerror(errno) << endl;
+	    break;
+	}
+	if (!filename.empty()) {
+	    ifstream ifs(filename.c_str());
+	    if (ifs) {
+		ifs.close();
+	    } else {
+		error = true;
+		cerr << "can't open file:" << filename << endl;
+		break;
+	    }
+	}
+	break;
+    }
+    if (error) {
+	cerr << pgm
+	     << " paramfile group-num local-num data-count" << endl;
+	cerr << "paramfile   parameter file of tinymt." << endl;
+	cerr << "group-num   group number of kernel call." << endl;
+	cerr << "local-num   local item number of kernel cal." << endl;
+	cerr << "data-count  generate random number count." << endl;
+	return false;
+    }
+#if defined(DEBUG)
+    cout << "parse_opt end" << endl;
+#endif
+    return true;
 }

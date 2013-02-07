@@ -12,19 +12,19 @@
 #include <sstream>
 #include <string>
 #include <float.h>
+#include <errno.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <inttypes.h>
+
 typedef uint32_t uint;
 typedef uint64_t ulong;
 #include "opencl_tools.hpp"
-
 #include "tinymt64def.h"
 #include "test_common.h"
-#include "parse_opt.h"
-extern "C" {
 #include "tinymt64.h"
 #include "jump64.h"
-}
+
 using namespace std;
 using namespace cl;
 
@@ -43,10 +43,14 @@ std::string errorMessage;
 /* =========================
    declaration
    ========================= */
+static int group_num;
+static int local_num;
+static int data_count;
 static tinymt64_t * tinymt64;
 static const uint64_t tinymt64j_mag = UINT64_C(12157665459056928801);
 static const char * tinymt64j_characteristic = "945e0ad4a30ec19432dfa9d5959e5d5d";
 
+static bool parse_opt(int argc, char **argv);
 static int init_check_data(tinymt64_t tinymt64[],
 			   int total_num,
 			   uint64_t seed);
@@ -111,7 +115,7 @@ int main(int argc, char * argv[])
 }
 
 /**
- * sample main
+ * test main
  *@param argc number of arguments
  *@param argv array of arguments
  *@return 0 normal, -1 error
@@ -121,8 +125,7 @@ static int test(int argc, char * argv[])
 #if defined(DEBUG)
     cout << "test start" << endl;
 #endif
-    options opt;
-    if (!parse_opt(opt, argc, argv)) {
+    if (!parse_opt(argc, argv)) {
 	return -1;
     }
     // OpenCL setup
@@ -132,7 +135,7 @@ static int test(int argc, char * argv[])
     platforms = getPlatforms();
     devices = getDevices();
     context = getContext();
-#if defined(APPLE) || defined(__MACOSX) || defined(__APPLE__)
+#if defined(INCLUDE_IMPOSSIBLE)
     source = getSource("test64_jump.cl");
 #else
     source = getSource("test64_jump.cl");
@@ -151,9 +154,9 @@ static int test(int argc, char * argv[])
 #if defined(DEBUG)
     cout << "openCL setup end" << endl;
 #endif
-    int total_num = opt.group_num * opt.local_num;
+    int total_num = group_num * local_num;
     int max_group_size = getMaxGroupSize();
-    if (opt.group_num > max_group_size) {
+    if (group_num > max_group_size) {
 	cout << "group_num greater than max value("
 	     << max_group_size << ")"
 	     << endl;
@@ -165,10 +168,10 @@ static int test(int argc, char * argv[])
     tinymt64 = new tinymt64_t[total_num];
     make_tinymt(total_num);
     init_check_data(tinymt64, total_num, 1234);
-    initialize_by_seed(tinymt_status, total_num, opt.local_num, 1234);
+    initialize_by_seed(tinymt_status, total_num, local_num, 1234);
     for (int i = 0; i < 2; i++) {
 	generate_uint64(tinymt_status, total_num,
-			opt.local_num, opt.data_count);
+			local_num, data_count);
     }
 
     // initialize by array
@@ -178,12 +181,12 @@ static int test(int argc, char * argv[])
 	make_tinymt(total_num);
 	init_check_data_array(tinymt64, total_num, seed_array, 5);
 	initialize_by_array(tinymt_status, total_num,
-			    opt.local_num, seed_array, 5);
+			    local_num, seed_array, 5);
 	for (int i = 0; i < 1; i++) {
 	    generate_double12(tinymt_status, total_num,
-			      opt.local_num, opt.data_count);
+			      local_num, data_count);
 	    generate_double01(tinymt_status, total_num,
-			      opt.local_num, opt.data_count);
+			      local_num, data_count);
 	}
     }
     delete[] tinymt64;
@@ -192,9 +195,10 @@ static int test(int argc, char * argv[])
 
 /**
  * initialize tinymt status in device global memory
- * using 1 parameter for 1 generator.
+ * using 1 parameter for all generators.
  *@param tinymt_status device global memories
- *@param group number of group
+ *@param total total number of work items
+ *@param local_item  number of local work items
  *@param seed seed for initialization
  */
 static void initialize_by_seed(Buffer& tinymt_status,
@@ -242,9 +246,10 @@ static void initialize_by_seed(Buffer& tinymt_status,
 
 /**
  * initialize tinymt status in device global memory
- * using 1 parameter for 1 generator.
+ * using 1 parameter for all generators.
  *@param tinymt_status device global memories
- *@param group number of group
+ *@param total total number of work items
+ *@param local_item number of local work items
  *@param seed_array seeds for initialization
  *@param seed_size size of seed_array
  */
@@ -295,7 +300,8 @@ static void initialize_by_array(Buffer& tinymt_status,
 /**
  * generate 64 bit unsigned random numbers in device global memory
  *@param tinymt_status device global memories
- *@param total_num number of groups for execution
+ *@param total_num total number of work items
+ *@param local_num number of local work items
  *@param data_size number of data to generate
  */
 static void generate_uint64(Buffer& tinymt_status,
@@ -352,7 +358,8 @@ static void generate_uint64(Buffer& tinymt_status,
  * generate double precision floating point numbers in the range [1, 2)
  * in device global memory
  *@param tinymt_status device global memories
- *@param total_num number of groups for execution
+ *@param total_num total number of work items
+ *@param local_num number of local work items
  *@param data_size number of data to generate
  */
 static void generate_double12(Buffer& tinymt_status,
@@ -400,7 +407,8 @@ static void generate_double12(Buffer& tinymt_status,
  * generate double precision floating point numbers in the range [0, 1)
  * in device global memory
  *@param tinymt_status device global memories
- *@param total_num number of groups for execution
+ *@param total_num total number of work items
+ *@param local_num number of local work items
  *@param data_size number of data to generate
  */
 static void generate_double01(Buffer& tinymt_status,
@@ -448,19 +456,27 @@ static void generate_double01(Buffer& tinymt_status,
 /* ==============
  * check programs
  * ==============*/
+/**
+ * set parameters for host side tinymt
+ *@param total_num total number of work items
+ */
 static void make_tinymt(int total_num)
 {
     tinymt64 = new tinymt64_t[total_num];
-    uint32_t mat1 = 0xfa051f40U;
-    uint32_t mat2 = 0xffd0fff4U;
-    uint64_t tmat = UINT64_C(0x58d02ffeffbfffbc);
     for (int i = 0; i < total_num; i++) {
-	tinymt64[i].mat1 = mat1;
-	tinymt64[i].mat2 = mat2;
-	tinymt64[i].tmat = tmat;
+	tinymt64[i].mat1 = TINYMT64J_MAT1;
+	tinymt64[i].mat2 = TINYMT64J_MAT2;
+	tinymt64[i].tmat = TINYMT64J_TMAT;
     }
 }
 
+/**
+ * initialize host side tinymt structure for check
+ *@param tinymt64 array of host side tinymt
+ *@param total_num total number of work items
+ *@param seed seed for initialization
+ *@return 0 if normal end
+ */
 static int init_check_data(tinymt64_t tinymt64[],
 			   int total_num,
 			   uint64_t seed)
@@ -483,6 +499,14 @@ static int init_check_data(tinymt64_t tinymt64[],
     return 0;
 }
 
+/**
+ * initialize host side tinymt structure for check
+ *@param tinymt64 array of host side tinymt
+ *@param total_num total number of work items
+ *@param seed_array seed for initialization
+ *@param size length of seed_array
+ *@return 0 if normal end
+ */
 static int init_check_data_array(tinymt64_t tinymt64[],
 				 int total_num,
 				 uint64_t seed_array[],
@@ -505,6 +529,12 @@ static int init_check_data_array(tinymt64_t tinymt64[],
     return 0;
 }
 
+/**
+ * compare host side generation and kernel side generation
+ *@param h_data host side copy of numbers generated by kernel side
+ *@param num_data size of h_data
+ *@param total_num total number of work items
+ */
 static void check_data(uint64_t * h_data,
 		       int num_data,
 		       int total_num)
@@ -522,7 +552,6 @@ static void check_data(uint64_t * h_data,
 	int count = 0;
 	for (int j = 0; j < size; j++) {
 	    uint64_t r = tinymt64_generate_uint64(&tinymt64[i]);
-	    //if ((h_data[i * size + j] != r) && disp_flg) {
 	    if ((h_data[j * total_num + i] != r) && disp_flg) {
 		cout << "mismatch i = " << dec << i
 		     << " j = " << dec << j
@@ -547,6 +576,12 @@ static void check_data(uint64_t * h_data,
 #endif
 }
 
+/**
+ * compare host side generation and kernel side generation
+ *@param h_data host side copy of numbers generated by kernel side
+ *@param num_data size of h_data
+ *@param total_num total number of work items
+ */
 static void check_data12(double * h_data,
 			 int num_data,
 			 int total_num)
@@ -591,6 +626,12 @@ static void check_data12(double * h_data,
 #endif
 }
 
+/**
+ * compare host side generation and kernel side generation
+ *@param h_data host side copy of numbers generated by kernel side
+ *@param num_data size of h_data
+ *@param total_num total number of work items
+ */
 static void check_data01(double * h_data,
 			 int num_data,
 			 int total_num)
@@ -635,6 +676,11 @@ static void check_data01(double * h_data,
 #endif
 }
 
+/**
+ * compare host side internal state and that of kernel side
+ *@param h_status internal state of kernel side tinymts
+ *@param total_num total number of work items
+ */
 static void check_status(tinymt64j_t * h_status,
 			 int total_num)
 {
@@ -696,6 +742,12 @@ static void check_status(tinymt64j_t * h_status,
 /* ==============
  * utility programs
  * ==============*/
+
+/**
+ * get buffer for kernel side tinymt
+ *@param total_num total number of work items
+ *@return buffer for kernel side tinymt
+ */
 static Buffer get_status_buff(int total_num)
 {
 #if defined(DEBUG)
@@ -709,3 +761,69 @@ static Buffer get_status_buff(int total_num)
 #endif
     return status_buffer;
 }
+
+/**
+ * parsing command line options
+ *@param argc number of arguments
+ *@param argv array of argument strings
+ *@return true if errors are found in command line arguments
+ */
+static bool parse_opt(int argc, char **argv)
+{
+#if defined(DEBUG)
+    cout << "parse_opt start" << endl;
+#endif
+    bool error = false;
+    std::string pgm = argv[0];
+    errno = 0;
+    if (argc <= 3) {
+	error = true;
+    }
+    while (!error) {
+	group_num = strtol(argv[1], NULL, 10);
+	if (errno) {
+	    error = true;
+	    cerr << "group num error!" << endl;
+	    cerr << strerror(errno) << endl;
+	    break;
+	}
+	if (group_num <= 0) {
+	    error = true;
+	    cerr << "group num should be greater than zero." << endl;
+	    break;
+	}
+	local_num = strtol(argv[2], NULL, 10);
+	if (errno) {
+	    error = true;
+	    cerr << "local num error!" << endl;
+	    cerr << strerror(errno) << endl;
+	    break;
+	}
+	if (local_num <= 0) {
+	    error = true;
+	    cerr << "local num should be greater than zero." << endl;
+	    break;
+	}
+	data_count = strtol(argv[3], NULL, 10);
+	if (errno) {
+	    error = true;
+	    cerr << "data count error!" << endl;
+	    cerr << strerror(errno) << endl;
+	    break;
+	}
+	break;
+    }
+    if (error) {
+	cerr << pgm
+	     << " group-num local-num data-count" << endl;
+	cerr << "group-num   group number of kernel call." << endl;
+	cerr << "local-num   local item number of kernel cal." << endl;
+	cerr << "data-count  generate random number count." << endl;
+	return false;
+    }
+#if defined(DEBUG)
+    cout << "parse_opt end" << endl;
+#endif
+    return true;
+}
+

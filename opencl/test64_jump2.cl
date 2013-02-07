@@ -21,9 +21,9 @@
  * kernel function.
  * This function initialize internal state of tinymt64.
  *
- * @param[in,out] d_status kernel I/O data
- * @param[out] d_data output
- * @param[in] size number of output data requested.
+ * @param d_status internal state of kernel side tinymt
+ * @param jump_table jump_table for initial jump
+ * @param seed seed for initialization
  */
 __kernel void
 tinymt_init_seed_kernel(__global tinymt64j_t * d_status,
@@ -45,11 +45,10 @@ tinymt_init_seed_kernel(__global tinymt64j_t * d_status,
 
 /**
  * kernel function.
- * This function initialize internal state of tinymt64.
+ * This function changes internal state of tinymt64 for next loop.
  *
- * @param[in,out] d_status kernel I/O data
- * @param[out] d_data output
- * @param[in] size number of output data requested.
+ * @param d_status internal state of kernel side tinymt
+ * @param jump_table jump table for next loop
  */
 __kernel void
 tinymt_jump_kernel(__global tinymt64j_t * d_status,
@@ -67,9 +66,9 @@ tinymt_jump_kernel(__global tinymt64j_t * d_status,
  * kernel function.
  * This function generates 64-bit unsigned integers in d_data
  *
- * @param[in,out] d_status kernel I/O data
- * @param[out] d_data output
- * @param[in] size number of output data requested.
+ * @param d_status internal state of kernel side tinymt
+ * @param d_data output
+ * @param size number of output data for a work item.
  */
 __kernel void
 tinymt_uint64_kernel(__global tinymt64j_t * d_status,

@@ -1,0 +1,43 @@
+#ifndef TINYMT_CLH
+#define TINYMT_CLH
+/**
+ * @file tinymt.clh
+ *
+ * @brief Common functions for tinymt on kernel program in openCL 1.2.
+ *
+ * @author Mutsuo Saito (Hiroshima University)
+ * @author Makoto Matsumoto (The University of Tokyo)
+ *
+ * Copyright (C) 2013 Mutsuo Saito, Makoto Matsumoto,
+ * Hiroshima University and The University of Tokyo.
+ * All rights reserved.
+ *
+ * The new BSD License is applied to this software, see LICENSE.txt
+ */
+
+/**
+ * return unique id in a device.
+ * This function may not work correctly in multiple devices.
+ * @return unique id in a device
+ */
+inline static size_t
+tinymt_get_sequential_id()
+{
+    return get_global_id(2) - get_global_offset(2)
+        + get_global_size(2) * (get_global_id(1) - get_global_offset(1))
+        + get_global_size(1) * get_global_size(2)
+        * (get_global_id(0) - get_global_offset(0));
+}
+
+/**
+ * return number of unique ids in a device.
+ * This function may not work correctly in multiple devices.
+ * @return number of unique ids in a device
+ */
+inline static size_t
+tinymt_get_sequential_size()
+{
+    return get_global_size(0) * get_global_size(1) * get_global_size(2);
+}
+
+#endif

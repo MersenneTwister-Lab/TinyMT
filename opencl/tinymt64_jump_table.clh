@@ -2,6 +2,20 @@
 #define TINYMT64_JUMP_TABLE_CLH
 
 #define TINYMT64_JUMP_TABLE_SIZE 32
+
+/**
+ * Step between sequential id x and x + 1.
+ * This number is 3<sup>40</sup>, the largest 3<sup>x</sup> smaller
+ * than 2<sup>64</sup>.
+ * As far as a work item consumes random numbers less than 3<sup>40</sup>,
+ * the jump defined in this file will work well.
+ */
+__constant ulong tinymt64j_magic_step = 12157665459056928801UL;
+
+/**
+ * Jump table contains pre-calculated jump polynomials.
+ * This table supports sequential ids from 0 to 2<sup>32</sup>-1.
+ */
 __constant uint
 tinymt64_jump_table[TINYMT64_JUMP_TABLE_SIZE][4] = {
     {0x628a6f8f,0xf735f194,0x4aa2b71b,0x3a68967c},

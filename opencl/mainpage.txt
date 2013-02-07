@@ -1,0 +1,47 @@
+/**
+ * \mainpage
+ *
+ * Here are some samples and test programs of TinyMT for OpenCL.
+ *
+ * Here are three types of tinymt files.
+ * - files with '_jump' suffix are using jump function. One parameter set
+ * is directly written in files and users do not need to specify parameter
+ * set or parameters files.
+ * - files with '_jump2' suffix are also using jump function. In these files,
+ * jump function is used to generate a long sequence by parallel generation.
+ * No samples, only test programs.
+ * - other files do not use jump function and use many parameter sets in
+ * parameter files.
+
+ * Here are following samples.
+ * - sample32.cpp and sample32.cl files are samples for basic usage of 32-bit
+ * unsigned integers and single precision floating point numbers.
+ * - sample64.cpp and sample64.cl files are samples for basic usage of 64-bit
+ * unsigned integers and double precision floating point numbers.
+ * - sample32_jump.cpp and sample32_jump.cl files are samples for easy usage
+ * of 32-bit unsigned integers and single precision floating point numbers.
+ * - sample64_jump.cpp and sample64_jump.cl files are samples for easy
+ * usage of 64-bit unsigned integers and double precision floating point
+ * numbers.
+ *
+ * Following files will be useful for kernel programs.
+ * - tinymt32.clh 32-bit tinymt which needs many parameters.
+ * - tinymt32_jump.clh 32-bit tinymt with jump.
+ * - tinymt64.clh 64-bit tinymt which needs many parameters.
+ * - tinymt64_jump.clh 64-bit tinymt with jump.
+ * - tinymt.clh included by above files.
+ * - tinymt32_jump_table.clh included by tinymt32_jump.clh.
+ * - tinymt64_jump_table.clh included by tinymt64_jump.clh.
+ *
+ * @author Mutsuo Saito, (saito@math.sci.hiroshima-u.ac.jp) Hiroshima University
+ * @author Makoto Matsumoto, The University of Tokyo
+ *
+ * @date 2013-2-7
+ *
+ * Copyright (C) 2013 Mutsuo Saito, Makoto Matsumoto,
+ * Hiroshima University and The University of Tokyo.
+ * All rights reserved.
+ *
+ * The 3-clause BSD License is applied to this software.
+ * \verbinclude LICENSE.txt
+ */

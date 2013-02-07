@@ -16,9 +16,10 @@
 #include <inttypes.h>
 
 typedef uint32_t uint;
+typedef uint64_t ulong;
 #include "opencl_tools.hpp"
-#include "tinymt32def.h"
-#include "tinymt32.h"
+#include "tinymt64def.h"
+#include "tinymt64.h"
 #include "file_reader.h"
 
 using namespace std;
@@ -91,16 +92,21 @@ static int sample(int argc, char * argv[])
     platforms = getPlatforms();
     devices = getDevices();
     context = getContext();
+
+    if (!hasDoubleExtension()) {
+	cout << "the GPU device does not have double extension." << endl;
+	return -1;
+    }
 #if defined(INCLUDE_IMPOSSIBLE)
-    source = getSource("sample32.cli");
+    source = getSource("sample64.cli");
 #else
-    source = getSource("sample32.cl");
+    source = getSource("sample64.cl");
 #endif
-    const char * option = "";
+    std::string option = "-DHAVE_DOUBLE ";
 #if defined(DEBUG)
-    option = "-DDEBUG";
+    option += "-DDEBUG ";
 #endif
-    program = getProgram(option);
+    program = getProgram(option.c_str());
     queue = getCommandQueue();
 #if defined(DEBUG)
     cout << "openCL setup end" << endl;
@@ -120,41 +126,35 @@ static int sample(int argc, char * argv[])
 
 /**
  * calculate PI using Monte Carlo Simulation
- *@param tinymt_status device global memories
+ *@param tinymt_status internal state of kernel side tinymt
  *@param total_num total number of work items
  *@param local_num number of local work items
  *@param data_size number of data to generate
  */
 static void calc_pi(Buffer& tinymt_status,
-		    int total_num,
-		    int local_num,
-		    int data_size)
+			    int total_num,
+			    int local_num,
+			    int data_size)
 {
 #if defined(DEBUG)
     cout << "calc_pi start" << endl;
 #endif
-    int r = data_size % total_num;
-    if (r != 0) {
-	data_size = data_size + total_num - r;
+    int group_num = total_num / local_num;
+    int min_size = total_num;
+    if (data_size % min_size != 0) {
+	data_size = (data_size / min_size + 1) * min_size;
     }
-    uint32_t seed = 1234;
+    uint64_t seed = 1234;
     Kernel uint_kernel(program, "calc_pi");
     Buffer global_buffer(context,
 			 CL_MEM_READ_WRITE,
-			 sizeof(uint32_t) * total_num / local_num);
+			 sizeof(uint32_t) * group_num);
 
     uint_kernel.setArg(0, tinymt_status);
     uint_kernel.setArg(1, seed);
     uint_kernel.setArg(2, data_size / total_num);
     uint_kernel.setArg(3, global_buffer);
     uint_kernel.setArg(4, sizeof(uint32_t) * local_num, NULL);
-#if defined(DEBUG)
-    cout << "seed:" << dec << seed << endl;
-    cout << "data_size:" << dec << data_size << endl;
-    cout << "data_size/item:" << dec << (data_size / total_num) << endl;
-    cout << "total_num:" << dec << total_num << endl;
-    cout << "local_num:" << dec << local_num << endl;
-#endif
     NDRange global(total_num);
     NDRange local(local_num);
     Event generate_event;
@@ -167,22 +167,19 @@ static void calc_pi(Buffer& tinymt_status,
 			       local,
 			       NULL,
 			       &generate_event);
-    uint32_t * result = new uint32_t[total_num / local_num];
+    uint32_t * result = new uint32_t[1];
+    double pi = 0;
     generate_event.wait();
     queue.enqueueReadBuffer(global_buffer,
 			    CL_TRUE,
 			    0,
-			    sizeof(uint32_t) * total_num / local_num,
+			    sizeof(uint32_t) * group_num,
 			    result);
     double time = get_time(generate_event);
-    double pi = 0;
-    for (int i = 0; i < total_num / local_num; i++) {
+    for (int i = 0; i < group_num; i++) {
 	pi += result[i];
-#if defined(DEBUG)
-	cout << dec << i << ":" << dec << result[i] << endl;
-#endif
     }
-    pi = 4.0 * pi / data_size;
+    pi = pi * 4 / data_size;
     cout << "generate time:" << time * 1000 << "ms" << endl;
     cout << "calculated pi = " << pi << endl;
     delete[] result;
@@ -207,10 +204,10 @@ static Buffer get_param_buff(std::string& filename,
     cout << "get_rec_buff start" << endl;
 #endif
     tinymt::file_reader fr(filename);
-    tinymt32wp_t * status_tbl = new tinymt32wp_t[total_num];
+    tinymt64wp_t * status_tbl = new tinymt64wp_t[total_num];
     uint32_t mat1;
     uint32_t mat2;
-    uint32_t tmat;
+    uint64_t tmat;
     for (int i = 0; i < total_num; i++) {
 	fr.get(&mat1, &mat2, &tmat);
 	status_tbl[i].mat1 = mat1;
@@ -219,11 +216,11 @@ static Buffer get_param_buff(std::string& filename,
     }
     Buffer status_buffer(context,
 			 CL_MEM_READ_ONLY,
-			 total_num * sizeof(tinymt32wp_t));
+			 total_num * sizeof(tinymt64wp_t));
     queue.enqueueWriteBuffer(status_buffer,
 			     CL_TRUE,
 			     0,
-			     total_num * sizeof(tinymt32wp_t),
+			     total_num * sizeof(tinymt64wp_t),
 			     status_tbl);
     delete[] status_tbl;
 #if defined(DEBUG)
@@ -264,7 +261,7 @@ static bool parse_opt(int argc, char **argv) {
 	    cerr << strerror(errno) << endl;
 	    break;
 	}
-	data_count = strtoll(argv[4], NULL, 10);
+	data_count = strtol(argv[4], NULL, 10);
 	if (errno) {
 	    error = true;
 	    cerr << "data count error!" << endl;

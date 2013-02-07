@@ -3,14 +3,7 @@
 /**
  * @file tinymt32def.h
  *
- * @brief Sample Program for openCL 1.2
- *
- * tinymt32
- * This program generates 32-bit unsigned integers.
- * The period of generated integers is 2<sup>127</sup>-1.
- *
- * This also generates single precision floating point numbers
- * uniformly distributed in the range [1, 2). (float r; 1.0 <= r < 2.0)
+ * @brief Common definitions in host and kernel for 32-bit tinymt.
  *
  * @author Mutsuo Saito (Hiroshima University)
  * @author Makoto Matsumoto (The University of Tokyo)
@@ -44,5 +37,9 @@ typedef struct TINYMT32J_T {
     uint s2;
     uint s3;
 } tinymt32j_t;
+
+#define TINYMT32J_MAT1 0x8f7011eeU
+#define TINYMT32J_MAT2 0xfc78ff1fU
+#define TINYMT32J_TMAT 0x3793fdffU
 
 #endif

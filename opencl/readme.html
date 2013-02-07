@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html" />
+    <meta name="keywords" content="tiny mt" />
+    <title>TinyMT OpenCL Sample</title>
+    <style type="text/css">
+      body {margin-right:10%;margin-left:10%}
+    </style>
+  </head>
+  <body>
+    <h2>TinyMT OpenCL Sample</h2>
+    <h2>READ ME FIRST</h2>
+
+    <p>
+      Here are TinyMT samples for OpenCL.
+      These are data parallel samples.
+    </p>
+    <p>
+      These samples require cl.hpp. If your environment doesn't
+      have cl.hpp, please download cl.hpp from
+      <a href="http://www.khronos.org/registry/cl/">
+	Khronos OpenCL API Registry</a>.
+      These samples also require stdint.h and inttypes.h in C99.
+    </p>
+
+    <h2>Usage</h2>
+
+    <h3>Compilation of test programs</h3>
+
+    <p>Sample programs need source programs of TinyMT to be compiled. And
+    They need the jump function of TinyMT.
+    </p>
+
+    <ol>
+      <li>Expand archive file</li>
+      <li>Copy <b>opencl</b> directory in TinyMT-opencl-src-xxxx to
+	the directory of TinyMT.</li>
+<pre>
+TinyMT-src-xxx
+   +---dc
+   +---tinymt
+   +---jump
+   +---opencl
+</pre>
+      <li>Change directory to copied opencl directory</li>
+      <li>Type <b>make all</b> to compile test program.</li>
+      <li>Type <b>make check</b></li>
+      <li>Check if OK is showed and no NG</li>
+    </ol>
+
+    <h3>Sample program</h3>
+    <p>Sample kernel program using jump function is simple.
+      In <a href="sample32_jump.cl">sample32_jump.cl</a>, PI is
+    calculated by Monte Carlo Method.</p>
+
+    <h3>License</h3>
+    <p>
+      These samples can be used freely for any purpose, including
+    commercial use. See <a href="LICENSE.txt">LICENSE.txt</a> for detail.
+    </p>
+  </body>
+</html>

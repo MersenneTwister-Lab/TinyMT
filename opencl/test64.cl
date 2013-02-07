@@ -13,7 +13,7 @@
  * @author Mutsuo Saito (Hiroshima University)
  * @author Makoto Matsumoto (The University of Tokyo)
  *
- * Copyright (C) 2010 Mutsuo Saito, Makoto Matsumoto,
+ * Copyright (C) 2013 Mutsuo Saito, Makoto Matsumoto,
  * Hiroshima University and The University of Tokyo.
  * All rights reserved.
  *
@@ -25,9 +25,8 @@
  * kernel function.
  * This function initialize internal state of tinymt64.
  *
- * @param[in,out] d_status kernel I/O data
- * @param[out] d_data output
- * @param[in] size number of output data requested.
+ * @param d_status internal state of kernel side tinymt
+ * @param seed seed of initialization
  */
 __kernel void
 tinymt_init_seed_kernel(__global tinymt64wp_t * d_status,
@@ -38,9 +37,6 @@ tinymt_init_seed_kernel(__global tinymt64wp_t * d_status,
 
     tinymt64_status_read(&tiny, d_status);
     tinymt64_init(&tiny, seed + id);
-#if defined(DEBUG)
-//    tiny.tmat = seed + id;
-#endif
     tinymt64_status_write(d_status, &tiny);
 }
 
@@ -48,9 +44,9 @@ tinymt_init_seed_kernel(__global tinymt64wp_t * d_status,
  * kernel function.
  * This function initialize internal state of tinymt64.
  *
- * @param[in,out] d_status kernel I/O data
- * @param[out] d_data output
- * @param[in] size number of output data requested.
+ * @param d_status internal state of kernel side tinymt
+ * @param seeds seeds of initialization
+ * @param length length of seeds
  */
 __kernel void
 tinymt_init_array_kernel(__global tinymt64wp_t * d_status,
@@ -75,9 +71,9 @@ tinymt_init_array_kernel(__global tinymt64wp_t * d_status,
  * kernel function.
  * This function generates 64-bit unsigned integers in d_data
  *
- * @param[in,out] d_status kernel I/O data
- * @param[out] d_data output
- * @param[in] size number of output data requested.
+ * @param d_status internal state of kernel side tinymt
+ * @param d_data output
+ * @param size number of output data requested.
  */
 __kernel void
 tinymt_uint64_kernel(__global tinymt64wp_t * d_status,
@@ -98,11 +94,11 @@ tinymt_uint64_kernel(__global tinymt64wp_t * d_status,
 #if defined(HAVE_DOUBLE)
 /**
  * kernel function.
- * This function generates 64-bit unsigned integers in d_data
+ * This function generates double floats in the range [1,2) in d_data
  *
- * @param[in,out] d_status kernel I/O data
- * @param[out] d_data output
- * @param[in] size number of output data requested.
+ * @param d_status internal state of kernel side tinymt
+ * @param d_data output
+ * @param size number of output data requested.
  */
 __kernel void
 tinymt_double12_kernel(__global tinymt64wp_t * d_status,
@@ -122,11 +118,11 @@ tinymt_double12_kernel(__global tinymt64wp_t * d_status,
 
 /**
  * kernel function.
- * This function generates 64-bit unsigned integers in d_data
+ * This function generates double float in the range [0,1) in d_data
  *
- * @param[in,out] d_status kernel I/O data
- * @param[out] d_data output
- * @param[in] size number of output data requested.
+ * @param d_status internal state of kernel side tinymt
+ * @param d_data output
+ * @param size number of output data requested.
  */
 __kernel void
 tinymt_double01_kernel(__global tinymt64wp_t * d_status,
