@@ -23,6 +23,7 @@
 
 #define TINYMT32_SHIFT0 1
 #define TINYMT32_SHIFT1 10
+#define TINYMT32_SHIFT8 8
 #define TINYMT32_MIN_LOOP 8
 #define TINYMT32_PRE_LOOP 8
 
@@ -34,8 +35,8 @@ __constant uint tinymt32_float_mask = 0x3f800000;
  *@param tiny tinymt internal state with parameters
  *@return unsigned 32-bit integer
  */
-inline static uint
-tinymt32_uint32(tinymt32wp_t * tiny)
+inline static void
+tinymt32_next_state(tinymt32wp_t * tiny)
 {
     uint x = (tiny->s0 & tinymt32_mask) ^ tiny->s1 ^ tiny->s2;
     uint y = tiny->s3;
@@ -50,8 +51,19 @@ tinymt32_uint32(tinymt32wp_t * tiny)
 	tiny->s1 ^= tiny->mat1;
 	tiny->s2 ^= tiny->mat2;
     }
+}
+
+/**
+ * This function generates unsigned 32-bit integers.
+ *@param tiny tinymt internal state with parameters
+ *@return unsigned 32-bit integer
+ */
+inline static uint
+tinymt32_temper(tinymt32wp_t * tiny)
+{
+    uint t0, t1;
     t0 = tiny->s3;
-    t1 = tiny->s0 + (tiny->s2 >> 8);
+    t1 = tiny->s0 + (tiny->s2 >> TINYMT32_SHIFT8);
     t0 ^= t1;
     if (t1 & 1) {
 	t0 ^= tiny->tmat;
@@ -66,29 +78,41 @@ tinymt32_uint32(tinymt32wp_t * tiny)
  *@return single floating point number
  */
 inline static float
-tinymt32_single12(tinymt32wp_t * tiny)
+tinymt32_temper12(tinymt32wp_t * tiny)
 {
-    uint x = (tiny->s0 & tinymt32_mask) ^ tiny->s1 ^ tiny->s2;
-    uint y = tiny->s3;
     uint t0, t1;
-    x ^= x << TINYMT32_SHIFT0;
-    y ^= (y >> TINYMT32_SHIFT0) ^ x;
-    tiny->s0 = tiny->s1;
-    tiny->s1 = tiny->s2;
-    tiny->s2 = x ^ (y << TINYMT32_SHIFT1);
-    tiny->s3 = y;
-    if (y & 1) {
-	tiny->s1 ^= tiny->mat1;
-	tiny->s2 ^= tiny->mat2;
-    }
     t0 = tiny->s3;
-    t1 = tiny->s0 + (tiny->s2 >> 8);
+    t1 = tiny->s0 + (tiny->s2 >> TINYMT32_SHIFT8);
     t0 ^= t1;
     if (t1 & 1) {
 	t0 = t0 ^ tiny->tmat;
     }
-    t0 = (t0 >> 9) ^ tinymt32_float_mask;
+    t0 = (t0 >> 9) | tinymt32_float_mask;
     return as_float(t0);
+}
+
+/**
+ * This function generates unsigned 32-bit integers.
+ *@param tiny tinymt internal state with parameters
+ *@return unsigned 32-bit integer
+ */
+inline static uint
+tinymt32_uint32(tinymt32wp_t * tiny)
+{
+    tinymt32_next_state(tiny);
+    return tinymt32_temper(tiny);
+}
+
+/**
+ * This function generates unsigned 32-bit integers.
+ *@param tiny tinymt internal state with parameters
+ *@return unsigned 32-bit integer
+ */
+inline static float
+tinymt32_single12(tinymt32wp_t * tiny)
+{
+    tinymt32_next_state(tiny);
+    return tinymt32_temper12(tiny);
 }
 
 /**

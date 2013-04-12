@@ -17,7 +17,6 @@
 #include <stdint.h>
 #include <inttypes.h>
 
-typedef uint32_t uint;
 #include "opencl_tools.hpp"
 #include "tinymt32def.h"
 #include "tinymt32.h"
@@ -51,46 +50,46 @@ static const char * tinymt32j_characteristic = "d8524022ed8dff4a8dcc50c798faba43
 
 static bool parse_opt(int argc, char **argv);
 static int init_check_data(tinymt32_t tinymt32[],
-			   int total_num,
-			   uint32_t seed);
+                           int total_num,
+                           uint32_t seed);
 static int init_check_data_array(tinymt32_t tinymt32[],
-				 int total_num,
-				 uint32_t seed_array[],
-				 int size);
+                                 int total_num,
+                                 uint32_t seed_array[],
+                                 int size);
 static void check_data(uint32_t * h_data,
-		       int num_data,
-		       int total_num);
+                       int num_data,
+                       int total_num);
 static void check_data12(float * h_data,
-			 int num_data,
-			 int total_num);
+                         int num_data,
+                         int total_num);
 static void check_data01(float * h_data,
-			 int num_data,
-			 int total_num);
+                         int num_data,
+                         int total_num);
 static void check_status(tinymt32j_t * h_status,
-			 int total_num);
+                         int total_num);
 static void initialize_by_seed(Buffer& tinymt_status,
-			       int total_num,
-			       int local_num,
-			       uint32_t seed);
+                               int total_num,
+                               int local_num,
+                               uint32_t seed);
 static void initialize_by_array(Buffer& tinymt_status,
-				int group,
-				int local_num,
-				uint32_t seed_array[],
-				int seed_size);
+                                int group,
+                                int local_num,
+                                uint32_t seed_array[],
+                                int seed_size);
 static void make_tinymt(int total_num);
 static Buffer get_status_buff(int total_num);
 static void generate_uint32(Buffer& tinymt_status,
-			    int total_num,
-			    int local_num,
-			    int data_size);
+                            int total_num,
+                            int local_num,
+                            int data_size);
 static void generate_single12(Buffer& tinymt_status,
-			      int total_num,
-			      int local_num,
-			      int data_size);
+                              int total_num,
+                              int local_num,
+                              int data_size);
 static void generate_single01(Buffer& tinymt_status,
-			      int total_num,
-			      int local_num,
-			      int data_size);
+                              int total_num,
+                              int local_num,
+                              int data_size);
 static int test(int argc, char * argv[]);
 
 /* ========================= */
@@ -106,14 +105,14 @@ static int test(int argc, char * argv[]);
 int main(int argc, char * argv[])
 {
     try {
-	return test(argc, argv);
+        return test(argc, argv);
     } catch (Error e) {
-	cerr << "Error Code:" << e.err() << endl;
-	cerr << e.what() << endl;
+        cerr << "Error Code:" << e.err() << endl;
+        cerr << e.what() << endl;
     } catch (std::string& er) {
-	cerr << er << endl;
+        cerr << er << endl;
     } catch (...) {
-	cerr << "other error" << endl;
+        cerr << "other error" << endl;
     }
     return -1;
 }
@@ -130,7 +129,7 @@ static int test(int argc, char * argv[])
     cout << "test start" << endl;
 #endif
     if (!parse_opt(argc, argv)) {
-	return -1;
+        return -1;
     }
     // OpenCL setup
 #if defined(DEBUG)
@@ -144,11 +143,11 @@ static int test(int argc, char * argv[])
 #else
     source = getSource("test32_jump.cl");
 #endif
-    const char * option = "";
+    std::string option = "-DKERNEL_PROGRAM ";
 #if defined(DEBUG)
-    option = "-DDEBUG";
+    option += "-DDEBUG ";
 #endif
-    program = getProgram(option);
+    program = getProgram(option.c_str());
     queue = getCommandQueue();
 #if defined(DEBUG)
     cout << "openCL setup end" << endl;
@@ -156,10 +155,10 @@ static int test(int argc, char * argv[])
     int total_num = group_num * local_num;
     int max_group_size = getMaxGroupSize();
     if (group_num > max_group_size) {
-	cout << "group_num greater than max value("
-	     << max_group_size << ")"
-	     << endl;
-	return -1;
+        cout << "group_num greater than max value("
+             << max_group_size << ")"
+             << endl;
+        return -1;
     }
     Buffer tinymt_status = get_status_buff(total_num);
     // initialize by seed
@@ -169,8 +168,8 @@ static int test(int argc, char * argv[])
     init_check_data(tinymt32, total_num, 1234);
     initialize_by_seed(tinymt_status, total_num, local_num, 1234);
     for (int i = 0; i < 2; i++) {
-	generate_uint32(tinymt_status, total_num,
-			local_num, data_count);
+        generate_uint32(tinymt_status, total_num,
+                        local_num, data_count);
     }
 
     // initialize by array
@@ -179,12 +178,12 @@ static int test(int argc, char * argv[])
     make_tinymt(total_num);
     init_check_data_array(tinymt32, total_num, seed_array, 5);
     initialize_by_array(tinymt_status, total_num,
-			local_num, seed_array, 5);
+                        local_num, seed_array, 5);
     for (int i = 0; i < 1; i++) {
-	generate_single12(tinymt_status, total_num,
-			  local_num, data_count);
-	generate_single01(tinymt_status, total_num,
-			  local_num, data_count);
+        generate_single12(tinymt_status, total_num,
+                          local_num, data_count);
+        generate_single01(tinymt_status, total_num,
+                          local_num, data_count);
     }
     delete[] tinymt32;
     return 0;
@@ -199,9 +198,9 @@ static int test(int argc, char * argv[])
  *@param seed seed for initialization
  */
 static void initialize_by_seed(Buffer& tinymt_status,
-			       int total,
-			       int local_item,
-			       uint32_t seed)
+                               int total,
+                               int local_item,
+                               uint32_t seed)
 {
 #if defined(DEBUG)
     cout << "initialize_by_seed start" << endl;
@@ -218,18 +217,18 @@ static void initialize_by_seed(Buffer& tinymt_status,
     cout << "local:" << dec << local_item << endl;
 #endif
     queue.enqueueNDRangeKernel(init_kernel,
-			       NullRange,
-			       global,
-			       local,
-			       NULL,
-			       &event);
+                               NullRange,
+                               global,
+                               local,
+                               NULL,
+                               &event);
     double time = get_time(event);
     tinymt32j_t status[total];
     queue.enqueueReadBuffer(tinymt_status,
-			    CL_TRUE,
-			    0,
-			    sizeof(tinymt32j_t) * total,
-			    status);
+                            CL_TRUE,
+                            0,
+                            sizeof(tinymt32j_t) * total,
+                            status);
     cout << "initializing time = " << time * 1000 << "ms" << endl;
 #if defined(DEBUG)
     cout << "status[0].s0:" << hex << status[0].s0 << endl;
@@ -253,22 +252,22 @@ static void initialize_by_seed(Buffer& tinymt_status,
  *@param seed_size length of seed_array
  */
 static void initialize_by_array(Buffer& tinymt_status,
-				int total,
-				int local_item,
-				uint32_t seed_array[],
-				int seed_size)
+                                int total,
+                                int local_item,
+                                uint32_t seed_array[],
+                                int seed_size)
 {
 #if defined(DEBUG)
     cout << "initialize_by_array start" << endl;
 #endif
     Buffer seed_array_buffer(context,
-			     CL_MEM_READ_WRITE,
-			     seed_size * sizeof(uint32_t));
+                             CL_MEM_READ_WRITE,
+                             seed_size * sizeof(uint32_t));
     queue.enqueueWriteBuffer(seed_array_buffer,
-			     CL_TRUE,
-			     0,
-			     seed_size * sizeof(uint32_t),
-			     seed_array);
+                             CL_TRUE,
+                             0,
+                             seed_size * sizeof(uint32_t),
+                             seed_array);
     Kernel init_kernel(program, "tinymt_init_array_kernel");
     init_kernel.setArg(0, tinymt_status);
     init_kernel.setArg(1, seed_array_buffer);
@@ -277,18 +276,18 @@ static void initialize_by_array(Buffer& tinymt_status,
     NDRange local(local_item);
     Event event;
     queue.enqueueNDRangeKernel(init_kernel,
-			       NullRange,
-			       global,
-			       local,
-			       NULL,
-			       &event);
+                               NullRange,
+                               global,
+                               local,
+                               NULL,
+                               &event);
     double time = get_time(event);
     tinymt32j_t status[total];
     queue.enqueueReadBuffer(tinymt_status,
-			    CL_TRUE,
-			    0,
-			    sizeof(tinymt32j_t) * total,
-			    status);
+                            CL_TRUE,
+                            0,
+                            sizeof(tinymt32j_t) * total,
+                            status);
     cout << "initializing time = " << time * 1000 << "ms" << endl;
     check_status(status, total);
 #if defined(DEBUG)
@@ -305,21 +304,21 @@ static void initialize_by_array(Buffer& tinymt_status,
  *@param data_size number of data to generate
  */
 static void generate_uint32(Buffer& tinymt_status,
-			    int total_num,
-			    int local_num,
-			    int data_size)
+                            int total_num,
+                            int local_num,
+                            int data_size)
 {
 #if defined(DEBUG)
     cout << "generate_uint32 start" << endl;
 #endif
     int min_size = total_num;
     if (data_size % min_size != 0) {
-	data_size = (data_size / min_size + 1) * min_size;
+        data_size = (data_size / min_size + 1) * min_size;
     }
     Kernel uint_kernel(program, "tinymt_uint32_kernel");
     Buffer output_buffer(context,
-			 CL_MEM_READ_WRITE,
-			 data_size * sizeof(uint32_t));
+                         CL_MEM_READ_WRITE,
+                         data_size * sizeof(uint32_t));
     uint_kernel.setArg(0, tinymt_status);
     uint_kernel.setArg(1, output_buffer);
     uint_kernel.setArg(2, data_size / total_num);
@@ -330,18 +329,18 @@ static void generate_uint32(Buffer& tinymt_status,
     cout << "generate_uint32 enque kernel start" << endl;
 #endif
     queue.enqueueNDRangeKernel(uint_kernel,
-			       NullRange,
-			       global,
-			       local,
-			       NULL,
-			       &generate_event);
+                               NullRange,
+                               global,
+                               local,
+                               NULL,
+                               &generate_event);
     uint32_t * output = new uint32_t[data_size];
     generate_event.wait();
     queue.enqueueReadBuffer(output_buffer,
-			    CL_TRUE,
-			    0,
-			    data_size * sizeof(uint32_t),
-			    output);
+                            CL_TRUE,
+                            0,
+                            data_size * sizeof(uint32_t),
+                            output);
     check_data(output, data_size, total_num);
 #if defined(DEBUG)
     print_uint32(output, data_size, total_num);
@@ -363,18 +362,18 @@ static void generate_uint32(Buffer& tinymt_status,
  *@param data_size number of data to generate
  */
 static void generate_single12(Buffer& tinymt_status,
-			      int total_num,
-			      int local_num,
-			      int data_size)
+                              int total_num,
+                              int local_num,
+                              int data_size)
 {
     int min_size = total_num;
     if (data_size % min_size != 0) {
-	data_size = (data_size / min_size + 1) * min_size;
+        data_size = (data_size / min_size + 1) * min_size;
     }
     Kernel single_kernel(program, "tinymt_single12_kernel");
     Buffer output_buffer(context,
-			 CL_MEM_READ_WRITE,
-			 data_size * sizeof(float));
+                         CL_MEM_READ_WRITE,
+                         data_size * sizeof(float));
     single_kernel.setArg(0, tinymt_status);
     single_kernel.setArg(1, output_buffer);
     single_kernel.setArg(2, data_size / total_num);
@@ -382,18 +381,18 @@ static void generate_single12(Buffer& tinymt_status,
     NDRange local(local_num);
     Event generate_event;
     queue.enqueueNDRangeKernel(single_kernel,
-			       NullRange,
-			       global,
-			       local,
-			       NULL,
-			       &generate_event);
+                               NullRange,
+                               global,
+                               local,
+                               NULL,
+                               &generate_event);
     float * output = new float[data_size];
     generate_event.wait();
     queue.enqueueReadBuffer(output_buffer,
-			    CL_TRUE,
-			    0,
-			    data_size * sizeof(float),
-			    &output[0]);
+                            CL_TRUE,
+                            0,
+                            data_size * sizeof(float),
+                            &output[0]);
     check_data12(output, data_size, total_num);
 #if defined(DEBUG)
     print_float(&output[0], data_size, total_num);
@@ -412,18 +411,18 @@ static void generate_single12(Buffer& tinymt_status,
  *@param data_size number of data to generate
  */
 static void generate_single01(Buffer& tinymt_status,
-			      int total_num,
-			      int local_num,
-			      int data_size)
+                              int total_num,
+                              int local_num,
+                              int data_size)
 {
     int min_size = total_num;
     if (data_size % min_size != 0) {
-	data_size = (data_size / min_size + 1) * min_size;
+        data_size = (data_size / min_size + 1) * min_size;
     }
     Kernel single_kernel(program, "tinymt_single01_kernel");
     Buffer output_buffer(context,
-			 CL_MEM_READ_WRITE,
-			 data_size * sizeof(float));
+                         CL_MEM_READ_WRITE,
+                         data_size * sizeof(float));
     single_kernel.setArg(0, tinymt_status);
     single_kernel.setArg(1, output_buffer);
     single_kernel.setArg(2, data_size / total_num);
@@ -431,18 +430,18 @@ static void generate_single01(Buffer& tinymt_status,
     NDRange local(local_num);
     Event generate_event;
     queue.enqueueNDRangeKernel(single_kernel,
-			       NullRange,
-			       global,
-			       local,
-			       NULL,
-			       &generate_event);
+                               NullRange,
+                               global,
+                               local,
+                               NULL,
+                               &generate_event);
     float * output = new float[data_size];
     generate_event.wait();
     queue.enqueueReadBuffer(output_buffer,
-			    CL_TRUE,
-			    0,
-			    data_size * sizeof(float),
-			    &output[0]);
+                            CL_TRUE,
+                            0,
+                            data_size * sizeof(float),
+                            &output[0]);
     check_data01(output, data_size, total_num);
 #if defined(DEBUG)
     print_float(&output[0], data_size, local_num);
@@ -464,9 +463,9 @@ static void make_tinymt(int total_num)
 {
     tinymt32 = new tinymt32_t[total_num];
     for (int i = 0; i < total_num; i++) {
-	tinymt32[i].mat1 = TINYMT32J_MAT1;
-	tinymt32[i].mat2 = TINYMT32J_MAT2;
-	tinymt32[i].tmat = TINYMT32J_TMAT;
+        tinymt32[i].mat1 = TINYMT32J_MAT1;
+        tinymt32[i].mat2 = TINYMT32J_MAT2;
+        tinymt32[i].tmat = TINYMT32J_TMAT;
     }
 }
 
@@ -478,8 +477,8 @@ static void make_tinymt(int total_num)
  *@return 0 if normal end
  */
 static int init_check_data(tinymt32_t tinymt32[],
-			   int total_num,
-			   uint32_t seed)
+                           int total_num,
+                           uint32_t seed)
 {
 #if defined(DEBUG)
     cout << "init_check_data start" << endl;
@@ -487,11 +486,11 @@ static int init_check_data(tinymt32_t tinymt32[],
 
     tinymt32_init(&tinymt32[0], seed);
     for (int i = 1; i < total_num; i++) {
-	tinymt32[i] = tinymt32[i - 1];
-	tinymt32_jump(&tinymt32[i],
-		      tinymt32j_mag,
-		      0,
-		      tinymt32j_characteristic);
+        tinymt32[i] = tinymt32[i - 1];
+        tinymt32_jump(&tinymt32[i],
+                      tinymt32j_mag,
+                      0,
+                      tinymt32j_characteristic);
     }
 #if defined(DEBUG)
     cout << "init_check_data end" << endl;
@@ -508,20 +507,20 @@ static int init_check_data(tinymt32_t tinymt32[],
  *@return 0 if normal end
  */
 static int init_check_data_array(tinymt32_t tinymt32[],
-				 int total_num,
-				 uint32_t seed_array[],
-				 int size)
+                                 int total_num,
+                                 uint32_t seed_array[],
+                                 int size)
 {
 #if defined(DEBUG)
     cout << "init_check_data_array start" << endl;
 #endif
     tinymt32_init_by_array(&tinymt32[0], seed_array, size);
     for (int i = 1; i < total_num; i++) {
-	tinymt32[i] = tinymt32[i - 1];
-	tinymt32_jump(&tinymt32[i],
-		      tinymt32j_mag,
-		      0,
-		      tinymt32j_characteristic);
+        tinymt32[i] = tinymt32[i - 1];
+        tinymt32_jump(&tinymt32[i],
+                      tinymt32j_mag,
+                      0,
+                      tinymt32j_characteristic);
     }
 #if defined(DEBUG)
     cout << "init_check_data_array end" << endl;
@@ -536,8 +535,8 @@ static int init_check_data_array(tinymt32_t tinymt32[],
  *@param total_num total number of work items
  */
 static void check_data(uint32_t * h_data,
-		       int num_data,
-		       int total_num)
+                       int num_data,
+                       int total_num)
 {
 #if defined(DEBUG)
     cout << "check_data start" << endl;
@@ -548,28 +547,28 @@ static void check_data(uint32_t * h_data,
 #endif
     bool error = false;
     for (int i = 0; i < total_num; i++) {
-	bool disp_flg = true;
-	int count = 0;
-	for (int j = 0; j < size; j++) {
-	    uint32_t r = tinymt32_generate_uint32(&tinymt32[i]);
-	    if ((h_data[j * total_num + i] != r) && disp_flg) {
-		cout << "mismatch i = " << dec << i
-		     << " j = " << dec << j
-		     << " data = " << hex << h_data[j * total_num + i]
-		     << " r = " << hex << r << endl;
-		cout << "check_data check N.G!" << endl;
-		count++;
-		error = true;
-	    }
-	    if (count > 10) {
-		disp_flg = false;
-	    }
-	}
+        bool disp_flg = true;
+        int count = 0;
+        for (int j = 0; j < size; j++) {
+            uint32_t r = tinymt32_generate_uint32(&tinymt32[i]);
+            if ((h_data[j * total_num + i] != r) && disp_flg) {
+                cout << "mismatch i = " << dec << i
+                     << " j = " << dec << j
+                     << " data = " << hex << h_data[j * total_num + i]
+                     << " r = " << hex << r << endl;
+                cout << "check_data check N.G!" << endl;
+                count++;
+                error = true;
+            }
+            if (count > 10) {
+                disp_flg = false;
+            }
+        }
     }
     if (!error) {
-	cout << "check_data check O.K!" << endl;
+        cout << "check_data check O.K!" << endl;
     } else {
-	throw cl::Error(-1, "tinymt32 check_data error!");
+        throw cl::Error(-1, "tinymt32 check_data error!");
     }
 #if defined(DEBUG)
     cout << "check_data end" << endl;
@@ -583,8 +582,8 @@ static void check_data(uint32_t * h_data,
  *@param total_num total number of work items
  */
 static void check_data12(float * h_data,
-			 int num_data,
-			 int total_num)
+                         int num_data,
+                         int total_num)
 {
 #if defined(DEBUG)
     cout << "check_data start" << endl;
@@ -595,31 +594,31 @@ static void check_data12(float * h_data,
 #endif
     bool error = false;
     for (int i = 0; i < total_num; i++) {
-	bool disp_flg = true;
-	int count = 0;
-	for (int j = 0; j < size; j++) {
-	    float r = tinymt32_generate_float12(&tinymt32[i]);
-	    float d = h_data[j * total_num + i];
-	    bool ok = (-FLT_EPSILON <= (r - d))
-		&& ((r - d) <= FLT_EPSILON);
-	    if (!ok && disp_flg) {
-		cout << "mismatch i = " << dec << i
-		     << " j = " << dec << j
-		     << " data = " << hex << h_data[j * total_num + i]
-		     << " r = " << hex << r << endl;
-		cout << "check_data check N.G!" << endl;
-		count++;
-		error = true;
-	    }
-	    if (count > 10) {
-		disp_flg = false;
-	    }
-	}
+        bool disp_flg = true;
+        int count = 0;
+        for (int j = 0; j < size; j++) {
+            float r = tinymt32_generate_float12(&tinymt32[i]);
+            float d = h_data[j * total_num + i];
+            bool ok = (-FLT_EPSILON <= (r - d))
+                && ((r - d) <= FLT_EPSILON);
+            if (!ok && disp_flg) {
+                cout << "mismatch i = " << dec << i
+                     << " j = " << dec << j
+                     << " data = " << dec << h_data[j * total_num + i]
+                     << " r = " << dec << r << endl;
+                cout << "check_data check N.G!" << endl;
+                count++;
+                error = true;
+            }
+            if (count > 10) {
+                disp_flg = false;
+            }
+        }
     }
     if (!error) {
-	cout << "check_data check O.K!" << endl;
+        cout << "check_data check O.K!" << endl;
     } else {
-	throw cl::Error(-1, "tinymt32 check_data error!");
+        throw cl::Error(-1, "tinymt32 check_data error!");
     }
 #if defined(DEBUG)
     cout << "check_data end" << endl;
@@ -633,8 +632,8 @@ static void check_data12(float * h_data,
  *@param total_num total number of work items
  */
 static void check_data01(float * h_data,
-			 int num_data,
-			 int total_num)
+                         int num_data,
+                         int total_num)
 {
 #if defined(DEBUG)
     cout << "check_data start" << endl;
@@ -645,31 +644,31 @@ static void check_data01(float * h_data,
 #endif
     bool error = false;
     for (int i = 0; i < total_num; i++) {
-	bool disp_flg = true;
-	int count = 0;
-	for (int j = 0; j < size; j++) {
-	    float r = tinymt32_generate_float(&tinymt32[i]);
-	    float d = h_data[j * total_num + i];
-	    bool ok = (-FLT_EPSILON <= (r - d))
-		&& ((r - d) <= FLT_EPSILON);
-	    if (!ok && disp_flg) {
-		cout << "mismatch i = " << dec << i
-		     << " j = " << dec << j
-		     << " data = " << hex << h_data[j * total_num + i]
-		     << " r = " << hex << r << endl;
-		cout << "check_data check N.G!" << endl;
-		count++;
-		error = true;
-	    }
-	    if (count > 10) {
-		disp_flg = false;
-	    }
-	}
+        bool disp_flg = true;
+        int count = 0;
+        for (int j = 0; j < size; j++) {
+            float r = tinymt32_generate_float(&tinymt32[i]);
+            float d = h_data[j * total_num + i];
+            bool ok = (-FLT_EPSILON <= (r - d))
+                && ((r - d) <= FLT_EPSILON);
+            if (!ok && disp_flg) {
+                cout << "mismatch i = " << dec << i
+                     << " j = " << dec << j
+                     << " data = " << dec << h_data[j * total_num + i]
+                     << " r = " << dec << r << endl;
+                cout << "check_data check N.G!" << endl;
+                count++;
+                error = true;
+            }
+            if (count > 10) {
+                disp_flg = false;
+            }
+        }
     }
     if (!error) {
-	cout << "check_data check O.K!" << endl;
+        cout << "check_data check O.K!" << endl;
     } else {
-	throw cl::Error(-1, "tinymt32 check_data error!");
+        throw cl::Error(-1, "tinymt32 check_data error!");
     }
 #if defined(DEBUG)
     cout << "check_data end" << endl;
@@ -682,63 +681,63 @@ static void check_data01(float * h_data,
  *@param total_num total number of work items
  */
 static void check_status(tinymt32j_t * h_status,
-			 int total_num)
+                         int total_num)
 {
 #if defined(DEBUG)
     cout << "check_status start" << endl;
 #endif
     typedef struct {
-	uint32_t status[4];
+        uint32_t status[4];
     } sp;
     sp * dummy = (sp *)h_status;
     int counter = 0;
 #if defined(DEBUG)
-	cout << "device:" << endl;
-	cout << "s0:" << hex << h_status[0].s0 << endl;
-	cout << "s1:" << hex << h_status[0].s1 << endl;
-	cout << "s2:" << hex << h_status[0].s2 << endl;
-	cout << "s3:" << hex << h_status[0].s3 << endl;
-	cout << "s0:" << hex << h_status[1].s0 << endl;
-	cout << "host:" << endl;
-	cout << "s0:" << hex << tinymt32[0].status[0] << endl;
-	cout << "s1:" << hex << tinymt32[0].status[1] << endl;
-	cout << "s2:" << hex << tinymt32[0].status[2] << endl;
-	cout << "s3:" << hex << tinymt32[0].status[3] << endl;
-	cout << "s0:" << hex << tinymt32[1].status[0] << endl;
+        cout << "device:" << endl;
+        cout << "s0:" << hex << h_status[0].s0 << endl;
+        cout << "s1:" << hex << h_status[0].s1 << endl;
+        cout << "s2:" << hex << h_status[0].s2 << endl;
+        cout << "s3:" << hex << h_status[0].s3 << endl;
+        cout << "s0:" << hex << h_status[1].s0 << endl;
+        cout << "host:" << endl;
+        cout << "s0:" << hex << tinymt32[0].status[0] << endl;
+        cout << "s1:" << hex << tinymt32[0].status[1] << endl;
+        cout << "s2:" << hex << tinymt32[0].status[2] << endl;
+        cout << "s3:" << hex << tinymt32[0].status[3] << endl;
+        cout << "s0:" << hex << tinymt32[1].status[0] << endl;
 #endif
     for (int i = 0; i < total_num; i++) {
-	for (int j = 0; j < 4; j++) {
-	    uint32_t x = dummy[i].status[j];
-	    uint32_t r = tinymt32[i].status[j];
-	    if (j == 0) {
-		x = x & TINYMT32_MASK;
-		r = r & TINYMT32_MASK;
-	    }
+        for (int j = 0; j < 4; j++) {
+            uint32_t x = dummy[i].status[j];
+            uint32_t r = tinymt32[i].status[j];
+            if (j == 0) {
+                x = x & TINYMT32_MASK;
+                r = r & TINYMT32_MASK;
+            }
 #if defined(DEBUG)
-	    if (i == 0 && counter == 0) {
-		cout << "i = " << dec << i
-		     << " j = " << dec << j
-		     << " device = " << hex << x
-		     << " host = " << hex << r << endl;
-	    }
+            if (i == 0 && counter == 0) {
+                cout << "i = " << dec << i
+                     << " j = " << dec << j
+                     << " device = " << hex << x
+                     << " host = " << hex << r << endl;
+            }
 #endif
-	    if (x != r) {
-		cout << "mismatch i = " << dec << i
-		     << " j = " << dec << j
-		     << " device = " << hex << x
-		     << " host = " << hex << r << endl;
-		cout << "check_status check N.G!" << endl;
-		counter++;
-	    }
-	    if (counter > 10) {
-		return;
-	    }
-	}
+            if (x != r) {
+                cout << "mismatch i = " << dec << i
+                     << " j = " << dec << j
+                     << " device = " << hex << x
+                     << " host = " << hex << r << endl;
+                cout << "check_status check N.G!" << endl;
+                counter++;
+            }
+            if (counter > 10) {
+                return;
+            }
+        }
     }
     if (counter == 0) {
-	cout << "check_status check O.K!" << endl;
+        cout << "check_status check O.K!" << endl;
     } else {
-	throw cl::Error(-1, "tinymt32 check_status error!");
+        throw cl::Error(-1, "tinymt32 check_status error!");
     }
 #if defined(DEBUG)
     cout << "check_status end" << endl;
@@ -760,8 +759,8 @@ static Buffer get_status_buff(int total_num)
     cout << "get_rec_buff start" << endl;
 #endif
     Buffer status_buffer(context,
-			 CL_MEM_READ_ONLY,
-			 total_num * sizeof(tinymt32j_t));
+                         CL_MEM_READ_ONLY,
+                         total_num * sizeof(tinymt32j_t));
 #if defined(DEBUG)
     cout << "get_rec_buff end" << endl;
 #endif
@@ -783,49 +782,49 @@ static bool parse_opt(int argc, char **argv)
     std::string pgm = argv[0];
     errno = 0;
     if (argc <= 3) {
-	error = true;
+        error = true;
     }
     while (!error) {
-	group_num = strtol(argv[1], NULL, 10);
-	if (errno) {
-	    error = true;
-	    cerr << "group num error!" << endl;
-	    cerr << strerror(errno) << endl;
-	    break;
-	}
-	if (group_num <= 0) {
-	    error = true;
-	    cerr << "group num should be greater than zero." << endl;
-	    break;
-	}
-	local_num = strtol(argv[2], NULL, 10);
-	if (errno) {
-	    error = true;
-	    cerr << "local num error!" << endl;
-	    cerr << strerror(errno) << endl;
-	    break;
-	}
-	if (local_num <= 0) {
-	    error = true;
-	    cerr << "local num should be greater than zero." << endl;
-	    break;
-	}
-	data_count = strtol(argv[3], NULL, 10);
-	if (errno) {
-	    error = true;
-	    cerr << "data count error!" << endl;
-	    cerr << strerror(errno) << endl;
-	    break;
-	}
-	break;
+        group_num = strtol(argv[1], NULL, 10);
+        if (errno) {
+            error = true;
+            cerr << "group num error!" << endl;
+            cerr << strerror(errno) << endl;
+            break;
+        }
+        if (group_num <= 0) {
+            error = true;
+            cerr << "group num should be greater than zero." << endl;
+            break;
+        }
+        local_num = strtol(argv[2], NULL, 10);
+        if (errno) {
+            error = true;
+            cerr << "local num error!" << endl;
+            cerr << strerror(errno) << endl;
+            break;
+        }
+        if (local_num <= 0) {
+            error = true;
+            cerr << "local num should be greater than zero." << endl;
+            break;
+        }
+        data_count = strtol(argv[3], NULL, 10);
+        if (errno) {
+            error = true;
+            cerr << "data count error!" << endl;
+            cerr << strerror(errno) << endl;
+            break;
+        }
+        break;
     }
     if (error) {
-	cerr << pgm
-	     << " group-num local-num data-count" << endl;
-	cerr << "group-num   group number of kernel call." << endl;
-	cerr << "local-num   local item number of kernel cal." << endl;
-	cerr << "data-count  generate random number count." << endl;
-	return false;
+        cerr << pgm
+             << " group-num local-num data-count" << endl;
+        cerr << "group-num   group number of kernel call." << endl;
+        cerr << "local-num   local item number of kernel cal." << endl;
+        cerr << "data-count  generate random number count." << endl;
+        return false;
     }
 #if defined(DEBUG)
     cout << "parse_opt end" << endl;

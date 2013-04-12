@@ -15,27 +15,33 @@
  * The new BSD License is applied to this software, see LICENSE.txt
  */
 
+#if defined(KERNEL_PROGRAM)
+#if !defined(cl_uint)
+#define cl_uint uint
+#endif
+#endif
+
 /**
  * TinyMT32 structure with parameters
  */
 typedef struct TINYMT32WP_T {
-    uint s0;
-    uint s1;
-    uint s2;
-    uint s3;
-    uint mat1;
-    uint mat2;
-    uint tmat;
+    cl_uint s0;
+    cl_uint s1;
+    cl_uint s2;
+    cl_uint s3;
+    cl_uint mat1;
+    cl_uint mat2;
+    cl_uint tmat;
 } tinymt32wp_t;
 
 /**
  * TinyMT32 structure for jump without parameters
  */
 typedef struct TINYMT32J_T {
-    uint s0;
-    uint s1;
-    uint s2;
-    uint s3;
+    cl_uint s0;
+    cl_uint s1;
+    cl_uint s2;
+    cl_uint s3;
 } tinymt32j_t;
 
 #define TINYMT32J_MAT1 0x8f7011eeU

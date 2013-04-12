@@ -36,7 +36,7 @@
  * @author Mutsuo Saito, (saito@math.sci.hiroshima-u.ac.jp) Hiroshima University
  * @author Makoto Matsumoto, The University of Tokyo
  *
- * @date 2013-2-7
+ * @date 2013-2-14
  *
  * Copyright (C) 2013 Mutsuo Saito, Makoto Matsumoto,
  * Hiroshima University and The University of Tokyo.

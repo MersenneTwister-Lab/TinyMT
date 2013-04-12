@@ -13,8 +13,9 @@
 #include <float.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <stdint.h>
+#include <inttypes.h>
 
-typedef uint32_t uint;
 #include "opencl_tools.hpp"
 #include "tinymt32def.h"
 #include "tinymt32.h"
@@ -43,8 +44,8 @@ static int data_count;
 
 static bool parse_opt(int argc, char **argv);
 static void calc_pi(int total_num,
-		    int local_num,
-		    int data_size);
+                    int local_num,
+                    int data_size);
 static int sample(int argc, char * argv[]);
 
 /**
@@ -57,10 +58,10 @@ static int sample(int argc, char * argv[]);
 int main(int argc, char * argv[])
 {
     try {
-	return sample(argc, argv);
+        return sample(argc, argv);
     } catch (Error e) {
-	cerr << "Error Code:" << e.err() << endl;
-	cerr << e.what() << endl;
+        cerr << "Error Code:" << e.err() << endl;
+        cerr << e.what() << endl;
     }
     return -1;
 }
@@ -77,7 +78,7 @@ static int sample(int argc, char * argv[])
     cout << "sample start" << endl;
 #endif
     if (!parse_opt(argc, argv)) {
-	return -1;
+        return -1;
     }
     // OpenCL setup
 #if defined(DEBUG)
@@ -91,11 +92,11 @@ static int sample(int argc, char * argv[])
 #else
     source = getSource("sample32_jump.cl");
 #endif
-    const char * option = "";
+    std::string option = "-DKERNEL_PROGRAM ";
 #if defined(DEBUG)
-    option = "-DDEBUG";
+    option += "-DDEBUG ";
 #endif
-    program = getProgram(option);
+    program = getProgram(option.c_str());
     queue = getCommandQueue();
 #if defined(DEBUG)
     cout << "openCL setup end" << endl;
@@ -103,10 +104,10 @@ static int sample(int argc, char * argv[])
     int total_num = group_num * local_num;
     int max_group_size = getMaxGroupSize();
     if (group_num > max_group_size) {
-	cout << "group_num greater than max value("
-	     << max_group_size << ")"
-	     << endl;
-	return -1;
+        cout << "group_num greater than max value("
+             << max_group_size << ")"
+             << endl;
+        return -1;
     }
     calc_pi(total_num, local_num, data_count);
     return 0;
@@ -119,8 +120,8 @@ static int sample(int argc, char * argv[])
  *@param data_size number of data to generate
  */
 static void calc_pi(int total_num,
-		    int local_num,
-		    int data_size)
+                    int local_num,
+                    int data_size)
 {
 #if defined(DEBUG)
     cout << "calc_pi start" << endl;
@@ -128,13 +129,13 @@ static void calc_pi(int total_num,
     int group_num = total_num / local_num;
     int min_size = total_num;
     if (data_size % min_size != 0) {
-	data_size = (data_size / min_size + 1) * min_size;
+        data_size = (data_size / min_size + 1) * min_size;
     }
     uint32_t seed = 1234;
     Kernel uint_kernel(program, "calc_pi");
     Buffer global_buffer(context,
-			 CL_MEM_READ_WRITE,
-			 sizeof(uint32_t) * group_num);
+                         CL_MEM_READ_WRITE,
+                         sizeof(uint32_t) * group_num);
 
     uint_kernel.setArg(0, seed);
     uint_kernel.setArg(1, data_size / total_num);
@@ -147,22 +148,22 @@ static void calc_pi(int total_num,
     cout << "calc_pi enque kernel start" << endl;
 #endif
     queue.enqueueNDRangeKernel(uint_kernel,
-			       NullRange,
-			       global,
-			       local,
-			       NULL,
-			       &generate_event);
+                               NullRange,
+                               global,
+                               local,
+                               NULL,
+                               &generate_event);
     double pi = 0;
     uint32_t *global_sum = new uint32_t[group_num];
     generate_event.wait();
     queue.enqueueReadBuffer(global_buffer,
-			    CL_TRUE,
-			    0,
-			    sizeof(uint32_t) * group_num,
-			    global_sum);
+                            CL_TRUE,
+                            0,
+                            sizeof(uint32_t) * group_num,
+                            global_sum);
     double time = get_time(generate_event);
     for (int i = 0; i < group_num; i++) {
-	pi += global_sum[i];
+        pi += global_sum[i];
     }
     pi = 4.0 * pi / data_size;
     cout << "generate time:" << time * 1000 << "ms" << endl;
@@ -188,49 +189,49 @@ static bool parse_opt(int argc, char **argv)
     std::string pgm = argv[0];
     errno = 0;
     if (argc <= 3) {
-	error = true;
+        error = true;
     }
     while (!error) {
-	group_num = strtol(argv[1], NULL, 10);
-	if (errno) {
-	    error = true;
-	    cerr << "group num error!" << endl;
-	    cerr << strerror(errno) << endl;
-	    break;
-	}
-	if (group_num <= 0) {
-	    error = true;
-	    cerr << "group num should be greater than zero." << endl;
-	    break;
-	}
-	local_num = strtol(argv[2], NULL, 10);
-	if (errno) {
-	    error = true;
-	    cerr << "local num error!" << endl;
-	    cerr << strerror(errno) << endl;
-	    break;
-	}
-	if (local_num <= 0) {
-	    error = true;
-	    cerr << "local num should be greater than zero." << endl;
-	    break;
-	}
-	data_count = strtol(argv[3], NULL, 10);
-	if (errno) {
-	    error = true;
-	    cerr << "data count error!" << endl;
-	    cerr << strerror(errno) << endl;
-	    break;
-	}
-	break;
+        group_num = strtol(argv[1], NULL, 10);
+        if (errno) {
+            error = true;
+            cerr << "group num error!" << endl;
+            cerr << strerror(errno) << endl;
+            break;
+        }
+        if (group_num <= 0) {
+            error = true;
+            cerr << "group num should be greater than zero." << endl;
+            break;
+        }
+        local_num = strtol(argv[2], NULL, 10);
+        if (errno) {
+            error = true;
+            cerr << "local num error!" << endl;
+            cerr << strerror(errno) << endl;
+            break;
+        }
+        if (local_num <= 0) {
+            error = true;
+            cerr << "local num should be greater than zero." << endl;
+            break;
+        }
+        data_count = strtol(argv[3], NULL, 10);
+        if (errno) {
+            error = true;
+            cerr << "data count error!" << endl;
+            cerr << strerror(errno) << endl;
+            break;
+        }
+        break;
     }
     if (error) {
-	cerr << pgm
-	     << " group-num local-num data-count" << endl;
-	cerr << "group-num   group number of kernel call." << endl;
-	cerr << "local-num   local item number of kernel cal." << endl;
-	cerr << "data-count  generate random number count." << endl;
-	return false;
+        cerr << pgm
+             << " group-num local-num data-count" << endl;
+        cerr << "group-num   group number of kernel call." << endl;
+        cerr << "local-num   local item number of kernel cal." << endl;
+        cerr << "data-count  generate random number count." << endl;
+        return false;
     }
 #if defined(DEBUG)
     cout << "parse_opt end" << endl;

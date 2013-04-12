@@ -37,10 +37,10 @@ __constant ulong tinymt64_double_mask = 0x3ff0000000000000UL;
 
 /**
  * The function of the recursion formula calculation.
- *
+ *@param tiny internal state of tinymt with parameter
  */
-inline static ulong
-tinymt64_uint64(tinymt64wp_t * tiny)
+inline static void
+tinymt64_next_state(tinymt64wp_t * tiny)
 {
     ulong x;
 
@@ -53,51 +53,57 @@ tinymt64_uint64(tinymt64wp_t * tiny)
     tiny->s0 = tiny->s1;
     tiny->s1 = x;
     if (x & 1) {
-	tiny->s0 ^= tiny->mat1;
-	tiny->s1 ^= (ulong)tiny->mat2 << 32;
+        tiny->s0 ^= tiny->mat1;
+        tiny->s1 ^= (ulong)tiny->mat2 << 32;
     }
+}
+
+/**
+ * tempering output function
+ *@param tiny internal state of tinymt with parameter
+ *@return tempered output
+ */
+inline static ulong
+tinymt64_temper(tinymt64wp_t * tiny)
+{
+    ulong x;
     x = tiny->s0 + tiny->s1;
     x ^= tiny->s0 >> 8;
     if (x & 1) {
-	x ^= tiny->tmat;
+        x ^= tiny->tmat;
     }
     return x;
+}
+/**
+ * The function of the recursion formula calculation.
+ *@param tiny internal state of tinymt with parameter
+ *@return 32-bit random integer
+ */
+inline static ulong
+tinymt64_uint64(tinymt64wp_t * tiny)
+{
+    tinymt64_next_state(tiny);
+    return tinymt64_temper(tiny);
 }
 
 #if defined(HAVE_DOUBLE)
 /**
  * The function of the recursion formula calculation.
- *
+ *@param tiny internal state of tinymt with parameter
+ *@return random number uniformly distributes in the range [1, 2)
  */
 inline static double
 tinymt64_double12(tinymt64wp_t * tiny)
 {
-    ulong x;
-
-    tiny->s0 &= tinymt64_mask;
-    x = tiny->s0 ^ tiny->s1;
-    x ^= x << TINYMT64_SHIFT0;
-    x ^= x >> 32;
-    x ^= x << 32;
-    x ^= x << TINYMT64_SHIFT1;
-    tiny->s0 = tiny->s1;
-    tiny->s1 = x;
-    if (x & 1) {
-	tiny->s0 ^= tiny->mat1;
-	tiny->s1 ^= (ulong)tiny->mat2 << 32;
-    }
-    x = tiny->s0 + tiny->s1;
-    x ^= tiny->s0 >> 8;
-    if (x & 1) {
-	x ^= tiny->tmat;
-    }
+    ulong x = tinymt64_uint64(tiny);
     x = (x >> 12) ^ tinymt64_double_mask;
     return as_double(x);
 }
 
 /**
  * The function of the recursion formula calculation.
- *
+ *@param tiny internal state of tinymt with parameter
+ *@return random number uniformly distributes in the range [0, 1)
  */
 inline static double
 tinymt64_double01(tinymt64wp_t * tiny)
@@ -177,8 +183,8 @@ tinymt64_init(tinymt64wp_t * tiny, ulong seed)
  */
 inline static void
 tinymt64_init_by_array(tinymt64wp_t * tiny,
-		       ulong init_key[],
-		       int key_length)
+                       ulong init_key[],
+                       int key_length)
 {
     const int lag = 1;
     const int mid = 1;
@@ -193,46 +199,46 @@ tinymt64_init_by_array(tinymt64wp_t * tiny,
     st[2] = tiny->mat2;
     st[3] = tiny->tmat;
     if (key_length + 1 > TINYMT64_MIN_LOOP) {
-	count = key_length + 1;
+        count = key_length + 1;
     } else {
-	count = TINYMT64_MIN_LOOP;
+        count = TINYMT64_MIN_LOOP;
     }
     r = tinymt64_ini_func1(st[0] ^ st[mid % size]
-			   ^ st[(size - 1) % size]);
+                           ^ st[(size - 1) % size]);
     st[mid % size] += r;
     r += key_length;
     st[(mid + lag) % size] += r;
     st[0] = r;
     count--;
     for (i = 1, j = 0; (j < count) && (j < key_length); j++) {
-	r = tinymt64_ini_func1(st[i % size]
-			       ^ st[(i + mid) % size]
-			       ^ st[(i + size - 1) % size]);
-	st[(i + mid) % size] += r;
-	r += init_key[j] + i;
-	st[(i + mid + lag) % size] += r;
-	st[i % size] = r;
-	i = (i + 1) % size;
+        r = tinymt64_ini_func1(st[i % size]
+                               ^ st[(i + mid) % size]
+                               ^ st[(i + size - 1) % size]);
+        st[(i + mid) % size] += r;
+        r += init_key[j] + i;
+        st[(i + mid + lag) % size] += r;
+        st[i % size] = r;
+        i = (i + 1) % size;
     }
     for (; j < count; j++) {
-	r = tinymt64_ini_func1(st[i % size]
-		      ^ st[(i + mid) % size]
-		      ^ st[(i + size - 1) % size]);
-	st[(i + mid) % size] += r;
-	r += i;
-	st[(i + mid + lag) % size] += r;
-	st[i % size] = r;
-	i = (i + 1) % size;
+        r = tinymt64_ini_func1(st[i % size]
+                      ^ st[(i + mid) % size]
+                      ^ st[(i + size - 1) % size]);
+        st[(i + mid) % size] += r;
+        r += i;
+        st[(i + mid + lag) % size] += r;
+        st[i % size] = r;
+        i = (i + 1) % size;
     }
     for (j = 0; j < size; j++) {
-	r = tinymt64_ini_func2(st[i % size]
-			       + st[(i + mid) % size]
-			       + st[(i + size - 1) % size]);
-	st[(i + mid) % size] ^= r;
-	r -= i;
-	st[(i + mid + lag) % size] ^= r;
-	st[i % size] = r;
-	i = (i + 1) % size;
+        r = tinymt64_ini_func2(st[i % size]
+                               + st[(i + mid) % size]
+                               + st[(i + size - 1) % size]);
+        st[(i + mid) % size] ^= r;
+        r -= i;
+        st[(i + mid + lag) % size] ^= r;
+        st[i % size] = r;
+        i = (i + 1) % size;
     }
     tiny->s0 = st[0] ^ st[1];
     tiny->s1 = st[2] ^ st[3];
@@ -246,7 +252,7 @@ tinymt64_init_by_array(tinymt64wp_t * tiny,
  */
 inline static void
 tinymt64_status_read(tinymt64wp_t * tiny,
-		     __global tinymt64wp_t * g_status)
+                     __global tinymt64wp_t * g_status)
 {
     const size_t id = tinymt_get_sequential_id();
     tiny->s0 = g_status[id].s0;
@@ -263,7 +269,7 @@ tinymt64_status_read(tinymt64wp_t * tiny,
  */
 inline static void
 tinymt64_status_write(__global tinymt64wp_t * g_status,
-		      tinymt64wp_t * tiny)
+                      tinymt64wp_t * tiny)
 {
     const size_t id = tinymt_get_sequential_id();
     g_status[id].s0 = tiny->s0;

@@ -47,8 +47,18 @@ TinyMT-src-xxx
    +---opencl
 </pre>
       <li>Change directory to copied opencl directory</li>
+      <li>Open Makefile by your editor program, and uncomment the
+	line includes OPENCL = -lOpenCL if you are linux user,
+	or uncomment the line includes OPENCL = -framework opencl if
+	you are OS X user.
       <li>Type <b>make all</b> to compile test program.</li>
       <li>Type <b>make check</b></li>
+      <li>When error occurs, please execute test program which causes
+	error. If '#include' in kernel program causes error,
+	please uncomment the line includes CL_OPT = -DINCLUDE_IMPOSSIPLE
+	in Makefile. In this case, if your GPU has double precision
+	calculation ability, please change KERNEL_OPT to have -DHAVE_DOUBLE.
+	Then make clean and make all and make check.
       <li>Check if OK is showed and no NG</li>
     </ol>
 

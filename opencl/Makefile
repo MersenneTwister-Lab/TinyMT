@@ -1,12 +1,19 @@
 #DEBUG = -DDEBUG -ggdb
+#CL_OPT = -DINCLUDE_IMPOSSIBLE
 
 # Linux
 # OPENCL = -lOpenCL
 # OSX 10.6
 # OPENCL = -framework opencl
 
-CPP = g++ -Wall -Werror -O3 -D__STDC_CONSTANT_MACROS -I../tinymt -I../jump ${DEBUG}
-CC = gcc -Wall -Werror -O3 -std=c99 -I../tinymt -I../jump ${DEBUG}
+CPP = g++
+CPP_OPTIONS = -Wall -Wextra -O3 -D__STDC_CONSTANT_MACROS \
+	-I../tinymt -I../jump ${DEBUG} ${CL_OPT}
+CC = gcc
+CC_OPTIONS = -Wall -Wextra -O3 -std=c99 -I../tinymt -I../jump ${DEBUG}
+
+KERNEL_OPT = -DKERNEL_PROGRAM
+#KERNEL_OPT = -DKERNEL_PROGRAM -DHAVE_DOUBLE
 
 TEST_EXE = test32 test32_jump test32_jump2 test64 test64_jump test64_jump2
 SAMPLE_EXE = sample32 sample32_jump sample64 sample64_jump
@@ -17,6 +24,7 @@ DIR = TinyMT-opencl-src-${VERSION}
 FILES = Makefile \
 	FILES.txt \
 	LICENSE.txt \
+	CHANGE-LOG.txt \
 	Makefile \
 	check.sh \
 	compile.cpp \
@@ -52,7 +60,6 @@ FILES = Makefile \
 	tinymt32.clh \
 	tinymt32_jump.clh \
 	tinymt32_jump_table.clh \
-	tinymt32cl.h \
 	tinymt32dc.0.2000.txt \
 	tinymt32def.h \
 	tinymt64.clh \
@@ -69,14 +76,14 @@ test32: test32.cpp \
 	file_reader.o \
 	tinymt32.o \
 	test32.cli
-	${CPP} ${OPENCL} -o $@ test32.cpp \
+	${CPP} ${CPP_OPTIONS} ${OPENCL} -o $@ test32.cpp \
 	file_reader.o \
 	tinymt32.o
 
 sample32: sample32.cpp \
 	file_reader.o \
 	sample32.cli
-	${CPP} ${OPENCL} -o $@ sample32.cpp \
+	${CPP} ${CPP_OPTIONS} ${OPENCL} -o $@ sample32.cpp \
 	file_reader.o
 
 test32_jump: test32_jump.cpp \
@@ -84,21 +91,21 @@ test32_jump: test32_jump.cpp \
 	jump32.o \
 	f2_polynomial.o \
 	test32_jump.cli
-	${CPP} ${OPENCL} -o $@ test32_jump.cpp \
+	${CPP} ${CPP_OPTIONS} ${OPENCL} -o $@ test32_jump.cpp \
 	tinymt32.o \
 	f2_polynomial.o \
 	jump32.o
 
 sample32_jump: sample32_jump.cpp \
 	sample32_jump.cli
-	${CPP} ${OPENCL} -o $@ sample32_jump.cpp
+	${CPP} ${CPP_OPTIONS} ${OPENCL} -o $@ sample32_jump.cpp
 
 test32_jump2: test32_jump2.cpp \
 	tinymt32.o \
 	jump32.o \
 	f2_polynomial.o \
 	test32_jump2.cli
-	${CPP} ${OPENCL} -o $@ test32_jump2.cpp \
+	${CPP} ${CPP_OPTIONS} ${OPENCL} -o $@ test32_jump2.cpp \
 	tinymt32.o \
 	f2_polynomial.o \
 	jump32.o
@@ -107,14 +114,14 @@ test64: test64.cpp \
 	file_reader.o \
 	tinymt64.o \
 	test64.cli
-	${CPP} ${OPENCL} -o $@ test64.cpp \
+	${CPP} ${CPP_OPTIONS} ${OPENCL} -o $@ test64.cpp \
 	file_reader.o \
 	tinymt64.o
 
 sample64: sample64.cpp \
 	file_reader.o \
 	sample64.cli
-	${CPP} ${OPENCL} -o $@ sample64.cpp \
+	${CPP} ${CPP_OPTIONS} ${OPENCL} -o $@ sample64.cpp \
 	file_reader.o
 
 test64_jump: test64_jump.cpp \
@@ -122,45 +129,45 @@ test64_jump: test64_jump.cpp \
 	jump64.o \
 	f2_polynomial.o \
 	test64_jump.cli
-	${CPP} ${OPENCL} -o $@ test64_jump.cpp \
+	${CPP} ${CPP_OPTIONS} ${OPENCL} -o $@ test64_jump.cpp \
 	tinymt64.o \
 	f2_polynomial.o \
 	jump64.o
 
 sample64_jump: sample64_jump.cpp \
 	sample64_jump.cli
-	${CPP} ${OPENCL} -o $@ sample64_jump.cpp
+	${CPP} ${CPP_OPTIONS} ${OPENCL} -o $@ sample64_jump.cpp
 
 test64_jump2: test64_jump2.cpp \
 	tinymt64.o \
 	jump64.o \
 	f2_polynomial.o \
 	test64_jump2.cli
-	${CPP} ${OPENCL} -o $@ test64_jump2.cpp \
+	${CPP} ${CPP_OPTIONS} ${OPENCL} -o $@ test64_jump2.cpp \
 	tinymt64.o \
 	f2_polynomial.o \
 	jump64.o
 
 compile: compile.cpp
-	${CPP} ${OPENCL} -o $@ compile.cpp
+	${CPP} ${CPP_OPTIONS} ${OPENCL} -o $@ compile.cpp
 
 tinymt32.o:../tinymt/tinymt32.c
-	${CC} -c -o $@ ../tinymt/tinymt32.c
+	${CC} ${CC_OPTIONS} -c -o $@ ../tinymt/tinymt32.c
 
 tinymt64.o:../tinymt/tinymt64.c
-	${CC} -c -o $@ ../tinymt/tinymt64.c
+	${CC} ${CC_OPTIONS} -c -o $@ ../tinymt/tinymt64.c
 
 jump32.o:../jump/jump32.c
-	${CC} -c -o $@ ../jump/jump32.c
+	${CC} ${CC_OPTIONS} -c -o $@ ../jump/jump32.c
 
 jump64.o:../jump/jump64.c
-	${CC} -c -o $@ ../jump/jump64.c
+	${CC} ${CC_OPTIONS} -c -o $@ ../jump/jump64.c
 
 f2_polynomial.o:../jump/f2-polynomial.c
-	${CC} -c -o $@ ../jump/f2-polynomial.c
+	${CC} ${CC_OPTIONS} -c -o $@ ../jump/f2-polynomial.c
 
 .cpp.o:
-	${CPP} -c -o $@ $<
+	${CPP} ${CPP_OPTIONS} -c -o $@ $<
 
 test32.cli: test32.cl \
 	tinymt32.clh \
@@ -191,7 +198,7 @@ check:${TEST_EXE}
 	./check.sh
 
 .cl.cli:
-	cpp ${DEBUG} $< $@
+	cpp ${DEBUG} ${KERNEL_OPT} $< $@
 
 clean:
 	rm -rf *.o *~ *.dSYM *.cli
@@ -210,5 +217,5 @@ zip:
 	mkdir ${DIR}
 	mkdir ${DIR}/opencl
 	cp ${FILES} ${DIR}/opencl
-	zip -r ${DIR}.zup ${DIR}/*
+	zip -r ${DIR}.zip ${DIR}/*
 	rm -rf ${DIR}

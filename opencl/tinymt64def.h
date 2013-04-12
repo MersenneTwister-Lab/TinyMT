@@ -15,23 +15,35 @@
  * The new BSD License is applied to this software, see LICENSE.txt
  */
 
+#if defined(KERNEL_PROGRAM)
+#if !defined(cl_uint)
+#define cl_uint uint
+#endif
+#if !defined(cl_ulong)
+#define cl_ulong ulong
+#endif
+#if !defined(UINT64_X)
+#define UINT64_C(x) (x ## UL)
+#endif
+#endif
+
 /**
  * TinyMT32 structure with parameters
  */
 typedef struct TINYMT64WP_T {
-    ulong s0;
-    ulong s1;
-    uint mat1;
-    uint mat2;
-    ulong tmat;
+    cl_ulong s0;
+    cl_ulong s1;
+    cl_uint mat1;
+    cl_uint mat2;
+    cl_ulong tmat;
 } tinymt64wp_t;
 
 /**
  * TinyMT32 structure for jump without parameters
  */
 typedef struct TINYMT64J_T {
-    ulong s0;
-    ulong s1;
+    cl_ulong s0;
+    cl_ulong s1;
 } tinymt64j_t;
 
 #define TINYMT64J_MAT1 0xfa051f40U

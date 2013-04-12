@@ -46,9 +46,17 @@ TinyMT-src-xxx
    +---opencl
 </pre>
        <li>コピーしたopencl-sampleディレクトリにcd します。</li>
+       <li>Makefile をエディタで開いて、linux の場合は、OPENCL = -lOpenCL の行の
+       コメントを外してください。OS X の場合は OPENCL = -framework opencl の行の
+	 コメントを外してください。 先頭の # を消すことでコメントを外すことができます。</li>
        <li>make all でサンプルプログラムとテストプログラムがコンパイルされます。</li>
        <li>make check でテストが実行されます。</li>
-       <li>test- で始まるテストプログラムを使い、work group の数、local work item の
+       <li>チェックがエラーになった場合、エラーになったテストプログラムを実行してみてください。
+       カーネルプログラム内のインクルードでエラーになっている場合は、Makefile 内の
+       CL_OPT = -DINCLUDE_IMPOSSIBLE の行のコメントを外してください。この場合、
+       GPU にdouble 演算機能があるなら、さらに KERNEL_OPT の行の -DHAVE_DOUBLE
+       を有効にしてください。それから、make clean して、やり直してください。</li>
+       <li>test で始まるテストプログラムを使い、work group の数、local work item の
 	 数、生成する乱数の数を変えて実行することによって、
 	 ユーザー環境での疑似乱数生成速度を計測することができます。</li>
     </ol>

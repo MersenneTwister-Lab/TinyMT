@@ -12,6 +12,8 @@
  *
  * The new BSD License is applied to this software, see LICENSE.txt
  */
+#include <iostream>
+#include <iomanip>
 #include "file_reader.h"
 namespace tinymt {
     using namespace std;
@@ -100,7 +102,7 @@ namespace tinymt {
 	cerr << " pos:" << dec << pos
 	     << "comma is not found:" << buffer << endl;
 	throw runtime_error("comma was not found");
-	};
+    }
 
     /**
      * get parameters from buffer
@@ -112,6 +114,9 @@ namespace tinymt {
 				 char *buffer) {
 	char * p;
 	errno = 0;
+#if defined(DEBUG) && 0
+	cout << "get_params start" << endl;
+#endif
 	for (;;) {
 	    if (buffer[0] == '\n' || buffer[0] == '\0') {
 		errno = 1;
@@ -129,6 +134,9 @@ namespace tinymt {
 	    cerr << "file format error:" << buffer << endl;
 	    throw runtime_error("file format error");
 	}
+#if defined(DEBUG) && 0
+	cout << "get_params end" << endl;
+#endif
     }
 
     /**
@@ -141,6 +149,9 @@ namespace tinymt {
 				 char *buffer) {
 	char * p;
 	errno = 0;
+#if defined(DEBUG) && 0
+	cout << "get_params start" << endl;
+#endif
 	for (;;) {
 	    if (buffer[0] == '\n' || buffer[0] == '\0') {
 		errno = 1;
@@ -152,11 +163,15 @@ namespace tinymt {
 	    *mat2 = strtoul(p, NULL, 16);
 	    p = search_comma_next(buffer, 5);
 	    *tmat = strtoull(p, NULL, 16);
+	    break;
 	}
 	if (errno != 0) {
 	    cerr << "file format error:" << buffer << endl;
 	    throw runtime_error("file format error");
 	}
+#if defined(DEBUG) && 0
+	cout << "get_params end" << endl;
+#endif
     }
 }
 

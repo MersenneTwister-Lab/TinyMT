@@ -40,8 +40,8 @@ static inline std::vector<cl::Platform> getPlatforms()
     Platform::get(&platforms);
 #if defined(DEBUG)
     cout << "vendor:" << endl;
-    for (int i = 0; i < platforms.size(); i++) {
-	cout << platforms[i].getInfo<CL_PLATFORM_VENDOR>() << endl;
+    for (unsigned int i = 0; i < platforms.size(); i++) {
+        cout << platforms[i].getInfo<CL_PLATFORM_VENDOR>() << endl;
     }
 #endif
     errorMessage = "";
@@ -59,9 +59,8 @@ static inline std::vector<cl::Device> getDevices()
 #if defined(DEBUG)
     cout << "start get devices" << endl;
 #endif
-    cl_int err;
     errorMessage = "getDevices failed";
-    err = platforms[0].getDevices(CL_DEVICE_TYPE_GPU, &devices);
+    platforms[0].getDevices(CL_DEVICE_TYPE_GPU, &devices);
     errorMessage = "";
 #if defined(DEBUG)
     cout << "end get devices" << endl;
@@ -99,20 +98,20 @@ static inline cl::Program::Sources getSource(const char * filename)
         ifs.seekg(0, std::fstream::end);
         ::size_t size = (::size_t)ifs.tellg();
         ifs.seekg(0, std::fstream::beg);
-	char * buf = new char[size + 1];
-	ifs.read(buf, size);
+        char * buf = new char[size + 1];
+        ifs.read(buf, size);
         ifs.close();
         buf[size] = '\0';
-	programBuffer = buf;
-	delete[] buf;
+        programBuffer = buf;
+        delete[] buf;
     } else {
-	errorMessage = "open file failed";
-	throw Error(ifs.rdstate(), "open file failed");
+        errorMessage = "open file failed";
+        throw Error(ifs.rdstate(), "open file failed");
     }
     errorMessage = "create sources failed";
     cl::Program::Sources source(1,
-				make_pair(programBuffer.c_str(),
-					  programBuffer.size()));
+                                make_pair(programBuffer.c_str(),
+                                          programBuffer.size()));
     errorMessage = "";
 #if defined(DEBUG)
     cout << "end getSource" << endl;
@@ -132,17 +131,17 @@ static inline bool hasDoubleExtension()
     errorMessage = "device getinfo(CL_DEVICE_EXTENSIONS) failed";
     err = devices[0].getInfo(CL_DEVICE_EXTENSIONS, &extensions);
     if (err != CL_SUCCESS) {
-	cout << "device getinfo(CL_DEVICE_EXTENSIONS) err:"
-	     << dec << err << endl;
+        cout << "device getinfo(CL_DEVICE_EXTENSIONS) err:"
+             << dec << err << endl;
     }
     errorMessage = "";
 #if defined(DEBUG)
     cout << "device extensions:" << extensions << endl;
 #endif
     if (extensions.find("cl_khr_fp64",0) != std::string::npos) {
-	return true;
+        return true;
     } else {
-	return false;
+        return false;
     }
 }
 
@@ -153,35 +152,29 @@ static inline cl::Program getProgram(const char * option = "")
 #if defined(DEBUG)
     cout << "start get program" << endl;
 #endif
-    cl_int err;
+    cl_int err = 0;
     errorMessage = "create program failed";
     Program program = Program(context, source, &err);
 #if defined(DEBUG)
     cout << "start build" << endl;
 #endif
-#if 0
-    const char * option = "";
-    if (hasDoubleExtension()) {
-	option = "-DHAVE_DOUBLE";
-    }
-#endif
     errorMessage = "program build failed";
     try {
-	err = program.build(devices, option);
+        err = program.build(devices, option);
     } catch (cl::Error e) {
-	if (e.err() != CL_SUCCESS) {
-	    if (e.err() == CL_BUILD_PROGRAM_FAILURE) {
-		std::string str
-		    = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(devices[0]);
-		cout << "compile error:" << endl;
-		cout << str << endl;
-	    } else {
-		cout << "build error but not program failure err:"
-		     << dec << e.err()
-		     << " " << e.what() << endl;
-	    }
-	}
-	throw e;
+        if (e.err() != CL_SUCCESS) {
+            if (e.err() == CL_BUILD_PROGRAM_FAILURE) {
+                std::string str
+                    = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(devices[0]);
+                cout << "compile error:" << endl;
+                cout << str << endl;
+            } else {
+                cout << "build error but not program failure err:"
+                     << dec << e.err()
+                     << " " << e.what() << endl;
+            }
+        }
+        throw e;
     }
     errorMessage = "";
 #if defined(DEBUG)
@@ -197,12 +190,12 @@ static inline cl::CommandQueue getCommandQueue()
 #if defined(DEBUG)
     cout << "start get command queue" << endl;
 #endif
-    cl_int err;
+    cl_int err = 0;
     errorMessage = "create command queue failed";
     CommandQueue queue(context,
-		       devices[0],
-		       CL_QUEUE_PROFILING_ENABLE,
-		       &err);
+                       devices[0],
+                       CL_QUEUE_PROFILING_ENABLE,
+                       &err);
     errorMessage = "";
 #if defined(DEBUG)
     cout << "end get command queue" << endl;
@@ -222,34 +215,12 @@ static inline int getMaxGroupSize()
     errorMessage = "device getinfo(CL_DEVICE_MAX_WORK_GROUP_SIZE) failed";
     err = devices[0].getInfo(CL_DEVICE_MAX_WORK_GROUP_SIZE, &size);
     if (err != CL_SUCCESS) {
-	cout << "device getinfo(CL_DEVICE_MAX_WORK_GROUP_SIZE) err:"
-	     << dec << err << endl;
+        cout << "device getinfo(CL_DEVICE_MAX_WORK_GROUP_SIZE) err:"
+             << dec << err << endl;
     }
     errorMessage = "";
 #if defined(DEBUG)
     cout << "end get max group size" << endl;
-#endif
-    return size;
-}
-
-static inline cl_ulong getMaxConstantBufferSize()
-{
-    using namespace std;
-    using namespace cl;
-#if defined(DEBUG)
-    cout << "start get max constant buffer size" << endl;
-#endif
-    ::size_t size;
-    cl_int err;
-    errorMessage = "device getinfo(CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE) failed";
-    err = devices[0].getInfo(CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE, &size);
-    if (err != CL_SUCCESS) {
-	cout << "device getinfo(CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE) err:"
-	     << dec << err << endl;
-    }
-    errorMessage = "";
-#if defined(DEBUG)
-    cout << "end get max constant buffer size" << endl;
 #endif
     return size;
 }
@@ -266,8 +237,8 @@ static inline cl_ulong getLocalMemSize()
     errorMessage = "device getinfo(CL_DEVICE_LOCAL_MEM_SIZE) failed";
     err = devices[0].getInfo(CL_DEVICE_LOCAL_MEM_SIZE, &size);
     if (err != CL_SUCCESS) {
-	cout << "device getinfo(CL_DEVICE_LOCAL_MEM_SIZE) err:"
-	     << dec << err << endl;
+        cout << "device getinfo(CL_DEVICE_LOCAL_MEM_SIZE) err:"
+             << dec << err << endl;
     }
     errorMessage = "";
 #if defined(DEBUG)
@@ -288,8 +259,8 @@ static inline cl_ulong getConstantMemSize()
     errorMessage = "device getinfo(CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE) failed";
     err = devices[0].getInfo(CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE, &size);
     if (err != CL_SUCCESS) {
-	cout << "device getinfo(CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE) err:"
-	     << dec << err << endl;
+        cout << "device getinfo(CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE) err:"
+             << dec << err << endl;
     }
     errorMessage = "";
 #if defined(DEBUG)
@@ -310,8 +281,8 @@ static inline cl_ulong getGlobalMemSize()
     errorMessage = "device getinfo(CL_DEVICE_GLOBAL_MEM_SIZE) failed";
     err = devices[0].getInfo(CL_DEVICE_GLOBAL_MEM_SIZE, &size);
     if (err != CL_SUCCESS) {
-	cout << "device getinfo(CL_DEVICE_GLOBAL_MEM_SIZE) err:"
-	     << dec << err << endl;
+        cout << "device getinfo(CL_DEVICE_GLOBAL_MEM_SIZE) err:"
+             << dec << err << endl;
     }
     errorMessage = "";
 #if defined(DEBUG)
@@ -332,8 +303,8 @@ static inline int getMaxWorkItemSize(int dim)
     errorMessage = "device getinfo(CL_DEVICE_MAX_WORK_ITEM_SIZE) failed";
     err = devices[0].getInfo(CL_DEVICE_MAX_WORK_ITEM_SIZES, &vec);
     if (err != CL_SUCCESS) {
-	cout << "device getinfo(CL_DEVICE_MAX_WORK_ITEM_SIZES) err:"
-	     << dec << err << endl;
+        cout << "device getinfo(CL_DEVICE_MAX_WORK_ITEM_SIZES) err:"
+             << dec << err << endl;
     }
     errorMessage = "";
 #if defined(DEBUG)

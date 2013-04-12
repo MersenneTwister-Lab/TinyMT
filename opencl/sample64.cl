@@ -3,7 +3,7 @@
  *
  * @brief Sample Program for openCL 1.2
  *
- * This sample program calculate PI using Monte Carlo method
+ * This sample program calculates PI using Monte Carlo method
  *
  * @author Mutsuo Saito (Hiroshima University)
  * @author Makoto Matsumoto (The University of Tokyo)
@@ -18,7 +18,7 @@
 
 /**
  * kernel function.
- * This function initialize internal state of tinymt64.
+ * This function calculates PI using Monte Carlo Method.
  *
  * @param d_status internal state of kernel side tinymt
  * @param seed seed for initialization
@@ -28,10 +28,10 @@
  */
 __kernel void
 calc_pi(__global tinymt64wp_t * d_status,
-	       ulong seed,
-	       int num,
-	       __global uint * global_sum,
-	       __local uint * local_sum)
+               ulong seed,
+               int num,
+               __global uint * global_sum,
+               __local uint * local_sum)
 {
     const size_t id = tinymt_get_sequential_id();
     const size_t total = tinymt_get_sequential_size();
@@ -44,21 +44,21 @@ calc_pi(__global tinymt64wp_t * d_status,
     tinymt64_status_read(&tiny, d_status);
     tinymt64_init(&tiny, seed + id);
     for (int i = 0; i < num; i++) {
-	// generate
-	double x = tinymt64_double01(&tiny);
-	double y = tinymt64_double01(&tiny);
-	if (x * x + y * y < 1.0) {
-	    sum++;
-	}
+        // generate
+        double x = tinymt64_double01(&tiny);
+        double y = tinymt64_double01(&tiny);
+        if (x * x + y * y < 1.0) {
+            sum++;
+        }
     }
     // reduce
     local_sum[local_id] = sum;
     sum = 0;
     barrier(CLK_LOCAL_MEM_FENCE);
     if (local_id == 0) {
-	for (uint i = 0; i < get_local_size(0); i++) {
-	    sum += local_sum[i];
-	}
-	global_sum[group_id] = sum;
+        for (uint i = 0; i < get_local_size(0); i++) {
+            sum += local_sum[i];
+        }
+        global_sum[group_id] = sum;
     }
 }

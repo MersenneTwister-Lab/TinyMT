@@ -23,10 +23,6 @@
  */
 #include "tinymt.clh"
 #include "tinymt64_jump_table.clh"
-
-#if !defined(UINT64_C)
-#define UINT64_C(x) (x ## UL)
-#endif
 #include "tinymt64def.h"
 
 #if defined(HAVE_DOUBLE)
@@ -51,20 +47,22 @@ inline static void
 tinymt64j_next_state(tinymt64j_t *tiny);
 inline static ulong
 tinymt64j_temper(tinymt64j_t *tiny);
-inline static double
-tinymt64j_temper_double12(tinymt64j_t *tiny);
 inline static ulong
 tinymt64j_uint64(tinymt64j_t *tiny);
+#if defined(HAVE_DOUBLE)
+inline static double
+tinymt64j_temper_double12(tinymt64j_t *tiny);
 inline static double
 tinymt64j_double12(tinymt64j_t *tiny);
 inline static double
 tinymt64j_double01(tinymt64j_t *tiny);
+#endif
 inline static void
 tinymt64j_init_seed(tinymt64j_t *tiny, ulong seed);
 inline static void
 tinymt64j_init_by_array(tinymt64j_t * tiny,
-			ulong init_key[],
-			int key_length);
+                        ulong init_key[],
+                        int key_length);
 inline static void
 tinymt64j_period_certification(tinymt64j_t * tiny);
 inline static void
@@ -75,7 +73,7 @@ inline static ulong
 tinymt64j_func2(ulong x);
 inline static void
 tinymt64j_jump_by_polynomial(tinymt64j_t *tiny,
-			     uint jump_array[4]);
+                             uint jump_array[4]);
 
 /**
  * Addition of internal state
@@ -107,8 +105,8 @@ tinymt64j_next_state(tinymt64j_t *tiny)
     tiny->s0 = tiny->s1;
     tiny->s1 = x;
     if (x & 1) {
-	tiny->s0 ^= tinymt64j_mat1;
-	tiny->s1 ^= (ulong)tinymt64j_mat2 << 32;
+        tiny->s0 ^= tinymt64j_mat1;
+        tiny->s1 ^= (ulong)tinymt64j_mat2 << 32;
     }
 }
 
@@ -124,7 +122,7 @@ tinymt64j_temper(tinymt64j_t *tiny)
     x = tiny->s0 + tiny->s1;
     x ^= tiny->s0 >> 8;
     if (x & 1) {
-	x ^= tinymt64j_tmat;
+        x ^= tinymt64j_tmat;
     }
     return x;
 }
@@ -154,9 +152,9 @@ tinymt64j_temper_double12(tinymt64j_t *tiny)
     x = tiny->s0 + tiny->s1;
     x ^= tiny->s0 >> 8;
     if (x & 1) {
-	x = (x >> 12) ^ tinymt64j_tmat_double;
+        x = (x >> 12) ^ tinymt64j_tmat_double;
     } else {
-	x = (x >> 12) ^ 0x3ff0000000000000UL;
+        x = (x >> 12) ^ 0x3ff0000000000000UL;
     }
     return as_double(x);
 }
@@ -254,8 +252,8 @@ tinymt64j_init_seed(tinymt64j_t *tiny, ulong seed)
  */
 inline static void
 tinymt64j_init_by_array(tinymt64j_t * tiny,
-			ulong init_key[],
-			int key_length)
+                        ulong init_key[],
+                        int key_length)
 {
     const int lag = 1;
     const int mid = 1;
@@ -270,46 +268,46 @@ tinymt64j_init_by_array(tinymt64j_t * tiny,
     st[2] = tinymt64j_mat2;
     st[3] = tinymt64j_tmat;
     if (key_length + 1 > TINYMT64J_MIN_LOOP) {
-	count = key_length + 1;
+        count = key_length + 1;
     } else {
-	count = TINYMT64J_MIN_LOOP;
+        count = TINYMT64J_MIN_LOOP;
     }
     r = tinymt64j_func1(st[0] ^ st[mid % size]
-		  ^ st[(size - 1) % size]);
+                  ^ st[(size - 1) % size]);
     st[mid % size] += r;
     r += key_length;
     st[(mid + lag) % size] += r;
     st[0] = r;
     count--;
     for (i = 1, j = 0; (j < count) && (j < key_length); j++) {
-	r = tinymt64j_func1(st[i % size]
-		      ^ st[(i + mid) % size]
-		      ^ st[(i + size - 1) % size]);
-	st[(i + mid) % size] += r;
-	r += init_key[j] + i;
-	st[(i + mid + lag) % size] += r;
-	st[i % size] = r;
-	i = (i + 1) % size;
+        r = tinymt64j_func1(st[i % size]
+                      ^ st[(i + mid) % size]
+                      ^ st[(i + size - 1) % size]);
+        st[(i + mid) % size] += r;
+        r += init_key[j] + i;
+        st[(i + mid + lag) % size] += r;
+        st[i % size] = r;
+        i = (i + 1) % size;
     }
     for (; j < count; j++) {
-	r = tinymt64j_func1(st[i % size]
-		      ^ st[(i + mid) % size]
-		      ^ st[(i + size - 1) % size]);
-	st[(i + mid) % size] += r;
-	r += i;
-	st[(i + mid + lag) % size] += r;
-	st[i % size] = r;
-	i = (i + 1) % size;
+        r = tinymt64j_func1(st[i % size]
+                      ^ st[(i + mid) % size]
+                      ^ st[(i + size - 1) % size]);
+        st[(i + mid) % size] += r;
+        r += i;
+        st[(i + mid + lag) % size] += r;
+        st[i % size] = r;
+        i = (i + 1) % size;
     }
     for (j = 0; j < size; j++) {
-	r = tinymt64j_func2(st[i % size]
-		      + st[(i + mid) % size]
-		      + st[(i + size - 1) % size]);
-	st[(i + mid) % size] ^= r;
-	r -= i;
-	st[(i + mid + lag) % size] ^= r;
-	st[i % size] = r;
-	i = (i + 1) % size;
+        r = tinymt64j_func2(st[i % size]
+                      + st[(i + mid) % size]
+                      + st[(i + size - 1) % size]);
+        st[(i + mid) % size] ^= r;
+        r -= i;
+        st[(i + mid + lag) % size] ^= r;
+        st[i % size] = r;
+        i = (i + 1) % size;
     }
     tiny->s0 = st[0] ^ st[1];
     tiny->s1 = st[2] ^ st[3];
@@ -327,7 +325,7 @@ tinymt64j_init_by_array(tinymt64j_t * tiny,
  */
 inline static void
 tinymt64j_jump_by_array(tinymt64j_t *tiny,
-			__constant uint * jump_array)
+                        __constant uint * jump_array)
 {
     tinymt64j_t work_z;
     tinymt64j_t * work = &work_z;
@@ -335,14 +333,14 @@ tinymt64j_jump_by_array(tinymt64j_t *tiny,
     work->s1 = 0;
 
     for (int i = 0; i < 4; i++) {
-	uint x = jump_array[i];
-	for (int i = 0; i < 32; i++) {
-	    if ((x & 1) != 0) {
-		tinymt64j_add(work, tiny);
-	    }
-	    tinymt64j_next_state(tiny);
-	    x = x >> 1;
-	}
+        uint x = jump_array[i];
+        for (int i = 0; i < 32; i++) {
+            if ((x & 1) != 0) {
+                tinymt64j_add(work, tiny);
+            }
+            tinymt64j_next_state(tiny);
+            x = x >> 1;
+        }
     }
     *tiny = *work;
 }
@@ -353,10 +351,10 @@ tinymt64j_init_jump(tinymt64j_t *tiny, ulong seed)
     tinymt64j_init_seed(tiny, seed);
     size_t gid = tinymt_get_sequential_id();
     for (int i = 0; (gid != 0) && (i < TINYMT64_JUMP_TABLE_SIZE); i++) {
-	if ((gid & 1) != 0) {
-	    tinymt64j_jump_by_array(tiny, tinymt64_jump_table[i]);
-	}
-	gid = gid >> 1;
+        if ((gid & 1) != 0) {
+            tinymt64j_jump_by_array(tiny, tinymt64_jump_table[i]);
+        }
+        gid = gid >> 1;
     }
 }
 
@@ -366,16 +364,16 @@ tinymt64j_init_jump_array(tinymt64j_t *tiny, ulong * seed_array, int size)
     tinymt64j_init_by_array(tiny, seed_array, size);
     size_t gid = tinymt_get_sequential_id();
     for (int i = 0; i < TINYMT64_JUMP_TABLE_SIZE; i++) {
-	if ((gid & 1) != 0) {
-	    tinymt64j_jump_by_array(tiny, tinymt64_jump_table[i]);
-	}
-	gid = gid >> 1;
+        if ((gid & 1) != 0) {
+            tinymt64j_jump_by_array(tiny, tinymt64_jump_table[i]);
+        }
+        gid = gid >> 1;
     }
 }
 
 inline static void
 tinymt64j_status_write(__global tinymt64j_t * g_status,
-		       tinymt64j_t * tiny)
+                       tinymt64j_t * tiny)
 {
     const size_t id = tinymt_get_sequential_id();
     g_status[id].s0 = tiny->s0;
@@ -384,7 +382,7 @@ tinymt64j_status_write(__global tinymt64j_t * g_status,
 
 inline static void
 tinymt64j_status_read(tinymt64j_t * tiny,
-		      __global tinymt64j_t * g_status)
+                      __global tinymt64j_t * g_status)
 {
     const size_t id = tinymt_get_sequential_id();
     tiny->s0 = g_status[id].s0;

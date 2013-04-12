@@ -30,7 +30,7 @@
  */
 __kernel void
 tinymt_init_seed_kernel(__global tinymt32wp_t * d_status,
-			uint seed)
+                        uint seed)
 {
     const size_t id = tinymt_get_sequential_id();
     tinymt32wp_t tiny;
@@ -50,17 +50,17 @@ tinymt_init_seed_kernel(__global tinymt32wp_t * d_status,
  */
 __kernel void
 tinymt_init_array_kernel(__global tinymt32wp_t * d_status,
-			 __global uint * seeds,
-			int length)
+                         __global uint * seeds,
+                        int length)
 {
     const size_t id = tinymt_get_sequential_id();
     tinymt32wp_t tiny;
     uint local_seeds[10];
     if (length > 10) {
-	length = 10;
+        length = 10;
     }
     for (int i = 0; i < length; i++) {
-	local_seeds[i] = seeds[i];
+        local_seeds[i] = seeds[i];
     }
     tinymt32_status_read(&tiny, d_status);
     tinymt32_init_by_array(&tiny, local_seeds, length);
@@ -77,8 +77,8 @@ tinymt_init_array_kernel(__global tinymt32wp_t * d_status,
  */
 __kernel void
 tinymt_uint32_kernel(__global tinymt32wp_t * d_status,
-		     __global uint* d_data,
-		     int size)
+                     __global uint * d_data,
+                     int size)
 {
     const size_t id = tinymt_get_sequential_id();
     const size_t global_size = tinymt_get_sequential_size();
@@ -86,7 +86,7 @@ tinymt_uint32_kernel(__global tinymt32wp_t * d_status,
 
     tinymt32_status_read(&tiny, d_status);
     for (int i = 0; i < size; i++) {
-	d_data[global_size * i + id] = tinymt32_uint32(&tiny);
+        d_data[global_size * i + id] = tinymt32_uint32(&tiny);
     }
     tinymt32_status_write(d_status, &tiny);
 }
@@ -101,16 +101,16 @@ tinymt_uint32_kernel(__global tinymt32wp_t * d_status,
  */
 __kernel void
 tinymt_single12_kernel(__global tinymt32wp_t * d_status,
-		       __global float * d_data,
-		       int size)
+                       __global float * d_data,
+                       int size)
 {
     const size_t id = tinymt_get_sequential_id();
     const size_t sequential_size = tinymt_get_sequential_size();
-    tinymt32wp_t * tiny;
+    tinymt32wp_t tiny;
 
     tinymt32_status_read(&tiny, d_status);
     for (int i = 0; i < size; i++) {
-	d_data[sequential_size * i + id] = tinymt32_single12(&tiny);
+        d_data[sequential_size * i + id] = tinymt32_single12(&tiny);
     }
     tinymt32_status_write(d_status, &tiny);
 }
@@ -125,16 +125,16 @@ tinymt_single12_kernel(__global tinymt32wp_t * d_status,
  */
 __kernel void
 tinymt_single01_kernel(__global tinymt32wp_t * d_status,
-		       __global float * d_data,
-		       int size)
+                       __global float * d_data,
+                       int size)
 {
     const size_t id = tinymt_get_sequential_id();
     const size_t sequential_size = tinymt_get_sequential_size();
-    tinymt32wp_t * tiny;
+    tinymt32wp_t tiny;
 
     tinymt32_status_read(&tiny, d_status);
     for (int i = 0; i < size; i++) {
-	d_data[sequential_size * i + id] = tinymt32_single01(&tiny);
+        d_data[sequential_size * i + id] = tinymt32_single01(&tiny);
     }
     tinymt32_status_write(d_status, &tiny);
 }
