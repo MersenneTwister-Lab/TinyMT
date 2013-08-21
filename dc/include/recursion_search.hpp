@@ -33,90 +33,90 @@ namespace tinymt {
      */
     template<class T, class SG> class Search {
     public:
-	void get_minpoly(NTL::GF2X& minpoly, T& rand) {
-	    using namespace std;
-	    using namespace NTL;
+        void get_minpoly(NTL::GF2X& minpoly, T& rand) {
+            using namespace std;
+            using namespace NTL;
 
-	    vec_GF2 vec;
-	    int mexp = rand.get_mexp();
-	    vec.SetLength(mexp * 2);
-	    for (int i = 0; i < mexp * 2; i++) {
-		vec[i] = rand.generate() & 1;
-	    }
-	    MinPolySeq(minpoly, vec, mexp);
-	};
+            vec_GF2 vec;
+            int mexp = rand.get_mexp();
+            vec.SetLength(mexp * 2);
+            for (int i = 0; i < mexp * 2; i++) {
+                vec[i] = rand.generate() & 1;
+            }
+            MinPolySeq(minpoly, vec, mexp);
+        }
 
-	/**
-	 * generate random parameters and check if the generator's
-	 * state transition function has an irreducible characteristic
-	 * polynomial. If found in \b try_count times, return true, else
-	 * return false.
-	 *
-	 * @param try_count
-	 */
-	bool start(int try_count) {
-	    long mexp = rand.get_mexp();
-	    long degree;
-	    for (int i = 0; i < try_count; i++) {
-		rand.setup_param(sg->next());
-		rand.seeding(1);
-		get_minpoly(minpoly, rand);
-		count++;
-		degree = deg(minpoly);
-		if (degree != mexp) {
-		    continue;
-		}
-		if (IterIrredTest(minpoly)) {
-		    return true;
-		}
-	    }
-	    return false;
-	};
-	/**
-	 * call this function after \b start() has returned true.
-	 * @return random number generator class with parameters.
-	 */
-	const T& get_random() const {
-	    return rand;
-	};
+        /**
+         * generate random parameters and check if the generator's
+         * state transition function has an irreducible characteristic
+         * polynomial. If found in \b try_count times, return true, else
+         * return false.
+         *
+         * @param try_count
+         */
+        bool start(int try_count) {
+            long mexp = rand.get_mexp();
+            long degree;
+            for (int i = 0; i < try_count; i++) {
+                rand.setup_param(sg->next());
+                rand.seeding(1);
+                get_minpoly(minpoly, rand);
+                count++;
+                degree = deg(minpoly);
+                if (degree != mexp) {
+                    continue;
+                }
+                if (IterIrredTest(minpoly)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        /**
+         * call this function after \b start() has returned true.
+         * @return random number generator class with parameters.
+         */
+        const T& get_random() const {
+            return rand;
+        }
 
-	/**
-	 * call this function after \b start() has returned true.
-	 * In this program, if minimal polynomial is irreducible,
-	 * then the polynomial is characteristic polynomial of
-	 * generator's state transition function.
-	 *
-	 * @return minimal polynomial of generated sequence.
-	 */
-	const NTL::GF2X& get_minpoly() const {
-	    return minpoly;
-	};
+        /**
+         * call this function after \b start() has returned true.
+         * In this program, if minimal polynomial is irreducible,
+         * then the polynomial is characteristic polynomial of
+         * generator's state transition function.
+         *
+         * @return minimal polynomial of generated sequence.
+         */
+        const NTL::GF2X& get_minpoly() const {
+            return minpoly;
+        }
 
-	/**
-	 * @return tried count after this class has created.
-	 */
-	int get_count() const {
-	    return count;
-	};
+        /**
+         * @return tried count after this class has created.
+         */
+        int get_count() const {
+            return count;
+        }
 
-	/**
-	 * @param rand_ random number generator whose parameters are
-	 * searched.
-	 * @param seq_generator a sequential number generator which
-	 * gives sequential number for searching parameters.
-	 *
-	 */
-	Search(const T& rand_, SG& seq_generator) :
-	    rand(rand_)
-	    {
-		sg = &seq_generator;
-		count = 0;
-	    };
+        /**
+         * @param rand_ random number generator whose parameters are
+         * searched.
+         * @param seq_generator a sequential number generator which
+         * gives sequential number for searching parameters.
+         *
+         */
+        Search(const T& rand_, SG& seq_generator) :
+            rand(rand_)
+            {
+                sg = &seq_generator;
+                count = 0;
+            }
     private:
-	T rand;
-	NTL::GF2X minpoly;
-	SG *sg;
-	int count;
+        T rand;
+        NTL::GF2X minpoly;
+        SG *sg;
+        int count;
     };
 }
 #endif
