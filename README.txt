@@ -6,7 +6,7 @@
  Pseudo random number generators whose periods are 2^127-1.
 
  Mutsuo Saito (Hiroshima University) and
- Makoto Matsumoto (The University of Tokyo)
+ Makoto Matsumoto (The University of Tokyo & Hiroshima University)
 
  Copyright (C) 2011 Mutsuo Saito, Makoto Matsumoto,
  Hiroshima University and The University of Tokyo.
