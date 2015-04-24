@@ -24,7 +24,7 @@
 #define TINYMT32_SH1 10
 #define TINYMT32_SH8 8
 #define TINYMT32_MASK UINT32_C(0x7fffffff)
-#define TINYMT32_MUL (1.0f / 4294967296.0f)
+#define TINYMT32_MUL (1.0f / 16777216.0f)
 
 #if defined(__cplusplus)
 extern "C" {
@@ -180,7 +180,7 @@ inline static uint32_t tinymt32_generate_uint32(tinymt32_t * random) {
  */
 inline static float tinymt32_generate_float(tinymt32_t * random) {
     tinymt32_next_state(random);
-    return tinymt32_temper(random) * TINYMT32_MUL;
+    return (tinymt32_temper(random) >> 8) * TINYMT32_MUL;
 }
 
 /**

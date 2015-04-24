@@ -1,3 +1,7 @@
+ver. 1.1
+-------
+Bug fix of floating point conversion.
+
 ver. 1.0.3
 -------
 files in dc/include are changed not to have semicolons after method definitions.
