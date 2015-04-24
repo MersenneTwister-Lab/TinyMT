@@ -172,7 +172,7 @@ inline static uint32_t tinymt32_generate_uint32(tinymt32_t * random) {
 
 /**
  * This function outputs floating point number from internal state.
- * This function is implemented using multiplying by 1 / 2^32.
+ * This function is implemented using multiplying by (1 / 2^24).
  * floating point multiplication is faster than using union trick in
  * my Intel CPU.
  * @param random tinymt internal status

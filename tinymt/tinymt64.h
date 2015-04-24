@@ -158,7 +158,7 @@ inline static uint64_t tinymt64_generate_uint64(tinymt64_t * random) {
 
 /**
  * This function outputs floating point number from internal state.
- * This function is implemented using multiplying by 1 / 2^64.
+ * This function is implemented using multiplying by (1 / 2^53).
  * @param random tinymt internal status
  * @return floating point number r (0.0 <= r < 1.0)
  */
