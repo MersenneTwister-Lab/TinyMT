@@ -1,3 +1,7 @@
+ver. 1.1.1
+-------
+Version No. consistency
+
 ver. 1.1
 -------
 Bug fix of floating point conversion.

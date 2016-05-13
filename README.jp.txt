@@ -1,6 +1,6 @@
  =================================================================
- tinymt ver. 1.0
- 2011.5.31
+ tinymt ver. 1.1.1
+ 2016.5.13
 
  Tiny Mersenne Twister(tinymt).
  Pseudo random number generators whose periods are 2^127-1.
@@ -16,32 +16,31 @@
  LICENSE.txt
  =================================================================
 
- �ɥ�����Ȥϡ����Ȥ��Ѹ줬ʸˡŪ���������ʤ����Ǥ⡢�Ѹ��Ǥ�������
- ��ΤǤ���
+ ドキュメントは、たとえ英語が文法的に正しくない場合でも、英語版が正式な
+ ものです。
 
- ���Υ��������֥ե�����������Υ������ե������ޤ�Ǥ��ޤ���
- �ҤȤĤ� tinymt �ǡ��⤦�ҤȤĤ� tinymtdc �Ǥ���
+ このアーカイブファイルは二種類のソースファイルを含んでいます。
+ ひとつは tinymt で、もうひとつは tinymtdc です。
 
- tinymt �� C����ǽ񤫤�Ƥ��ޤ���
- stdint.h �� inttypes.h��ɬ�פǤ�
- C99 �򥵥ݡ��Ȥ��Ƥ��륳��ѥ���ʤ顢ɸ�।�󥯥롼�ɥѥ��ˤ�����ĤΥإå�
- �ե����뤬�ޤޤ�Ƥ��ޤ���
- Microsoft Visual Studio �Ѥ� stdint.h �� inttypes.h �� Google code
- �� msinttypes ���������ǽ�Ǥ���
+ tinymt は C言語で書かれています。
+ stdint.h と inttypes.hが必要です
+ C99 をサポートしているコンパイラなら、標準インクルードパスにこの二つのヘッダ
+ ファイルが含まれています。
+ Microsoft Visual Studio 用の stdint.h と inttypes.h は Google code
+ の msinttypes から入手可能です。
 
- tinymtdc ��C++����ǽ񤫤�Ƥ��ޤ���
- C++ tr1 �򥵥ݡ��Ȥ��Ƥ��륳��ѥ��餬ɬ�פǤ���
- �ޤ���stdint.h �� inttypes.h ����Ѥ��Ƥ��ޤ���
- ����ˡ�Victor Shoup ��Υ饤�֥�� NTL ��ɬ�פǤ���
+ tinymtdc はC++言語で書かれています。
+ C++ tr1 をサポートしているコンパイラが必要です。
+ また、stdint.h と inttypes.h も使用しています。
+ さらに、Victor Shoup 氏のライブラリ NTL が必要です。
 
- tinymt��tinymtdc��doxygen�ǥɥ�����Ȥ������Ǥ���褦�˽񤫤�Ƥ��ޤ���
- doxygen���ʤ��Ƥ�¹Ԥˤϱƶ�������ޤ��󤬡�doxygen�������
- �������ե�������γƴؿ��ˤĤ��ƾܺ٤ʥɥ�����Ȥ򸫤뤳�Ȥ�����ޤ���
+ tinymtもtinymtdcもdoxygenでドキュメントが生成できるように書かれています。
+ doxygenがなくても実行には影響がありませんが、doxygenがあれば
+ ソースファイル中の各関数について詳細なドキュメントを見ることが出来ます。
 
- �����������ɤ��ѹ������ꤷ�ʤ��ä��ꤷ�Ƥ��Υץ�����������ۤ�������
- �ϡ�LICENSE.txt�ʱѸ�ˤ��ɤ�ǲ�������
+ ソースコードを変更したりしなかったりしてこのプログラムを再配布したい人
+ は、LICENSE.txt（英語）を読んで下さい。
 
- �ե�������ѹ���ä��ƺ����ۤ�����ϡ��ɤ���������ʪ����ˤ��ʤ���Ϣ
- �����񤤤Ƥ����ơ����꤬���ä��Ȥ��ϡ��䤿���ǤϤʤ������ʤ��ˤޤ�Ϣ
- ������褦�����ѼԤ������Ʋ�������
-
+ ファイルに変更を加えて再配布する場合は、どうか、配布物の中にあなたの連
+ 絡先を書いておいて、問題があったときは、私たちではなく、あなたにまず連
+ 絡するように利用者に伝えて下さい。

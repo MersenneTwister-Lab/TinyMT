@@ -33,7 +33,7 @@ TINYMT_FILES = LICENSE.txt \
 	tinymt64.c \
 	tinymt64.h
 
-VERSION = 1.0.3
+VERSION = 1.1.1
 DIR = TinyMT-src-${VERSION}
 
 .PHONY : tar.gz
