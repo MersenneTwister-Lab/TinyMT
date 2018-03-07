@@ -44,7 +44,7 @@ typedef struct TINYMT32_T tinymt32_t;
 
 void tinymt32_init(tinymt32_t * random, uint32_t seed);
 void tinymt32_init_by_array(tinymt32_t * random, uint32_t init_key[],
-			    int key_length);
+                            int key_length);
 
 #if defined(__GNUC__)
 /**
@@ -73,8 +73,8 @@ inline static void tinymt32_next_state(tinymt32_t * random) {
 
     y = random->status[3];
     x = (random->status[0] & TINYMT32_MASK)
-	^ random->status[1]
-	^ random->status[2];
+        ^ random->status[1]
+        ^ random->status[2];
     x ^= (x << TINYMT32_SH0);
     y ^= (y >> TINYMT32_SH0) ^ x;
     random->status[0] = random->status[1];
@@ -96,10 +96,10 @@ inline static uint32_t tinymt32_temper(tinymt32_t * random) {
     t0 = random->status[3];
 #if defined(LINEARITY_CHECK)
     t1 = random->status[0]
-	^ (random->status[2] >> TINYMT32_SH8);
+        ^ (random->status[2] >> TINYMT32_SH8);
 #else
     t1 = random->status[0]
-	+ (random->status[2] >> TINYMT32_SH8);
+        + (random->status[2] >> TINYMT32_SH8);
 #endif
     t0 ^= t1;
     t0 ^= -((int32_t)(t1 & 1)) & random->tmat;
@@ -115,21 +115,21 @@ inline static uint32_t tinymt32_temper(tinymt32_t * random) {
 inline static float tinymt32_temper_conv(tinymt32_t * random) {
     uint32_t t0, t1;
     union {
-	uint32_t u;
-	float f;
+        uint32_t u;
+        float f;
     } conv;
 
     t0 = random->status[3];
 #if defined(LINEARITY_CHECK)
     t1 = random->status[0]
-	^ (random->status[2] >> TINYMT32_SH8);
+        ^ (random->status[2] >> TINYMT32_SH8);
 #else
     t1 = random->status[0]
-	+ (random->status[2] >> TINYMT32_SH8);
+        + (random->status[2] >> TINYMT32_SH8);
 #endif
     t0 ^= t1;
     conv.u = ((t0 ^ (-((int32_t)(t1 & 1)) & random->tmat)) >> 9)
-	      | UINT32_C(0x3f800000);
+              | UINT32_C(0x3f800000);
     return conv.f;
 }
 
@@ -142,21 +142,21 @@ inline static float tinymt32_temper_conv(tinymt32_t * random) {
 inline static float tinymt32_temper_conv_open(tinymt32_t * random) {
     uint32_t t0, t1;
     union {
-	uint32_t u;
-	float f;
+        uint32_t u;
+        float f;
     } conv;
 
     t0 = random->status[3];
 #if defined(LINEARITY_CHECK)
     t1 = random->status[0]
-	^ (random->status[2] >> TINYMT32_SH8);
+        ^ (random->status[2] >> TINYMT32_SH8);
 #else
     t1 = random->status[0]
-	+ (random->status[2] >> TINYMT32_SH8);
+        + (random->status[2] >> TINYMT32_SH8);
 #endif
     t0 ^= t1;
     conv.u = ((t0 ^ (-((int32_t)(t1 & 1)) & random->tmat)) >> 9)
-	      | UINT32_C(0x3f800001);
+              | UINT32_C(0x3f800001);
     return conv.f;
 }
 
@@ -233,7 +233,7 @@ inline static float tinymt32_generate_floatOO(tinymt32_t * random) {
  * In other words, this function makes one double precision floating point
  * number from one 32-bit unsigned integer.
  * @param random tinymt internal status
- * @return floating point number r (0.0 < r <= 1.0)
+ * @return floating point number r (0.0 <= r < 1.0)
  */
 inline static double tinymt32_generate_32double(tinymt32_t * random) {
     tinymt32_next_state(random);
