@@ -1,0 +1,46 @@
+name: Ubuntu build
+
+on: [push, pull_request]
+
+jobs:
+  build_clang:
+    name: clang [Ubuntu]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: install dependencies
+      run: |
+        sudo apt-get -qqq update
+        sudo apt-get install -y build-essential clang
+    - name: build as C
+      run: |
+        cd tinymt
+        make CC="clang -Wall -Wextra -Werror -Wsign-compare -Wconversion -O3"
+
+  build_gcc:
+    name: gcc [Ubuntu]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: install dependencies
+      run: |
+        sudo apt-get -qqq update
+        sudo apt-get install -y build-essential gcc
+    - name: build as C99
+      run: |
+        cd tinymt
+        make CC="gcc -Wall -Wextra -Werror -Wsign-compare -Wconversion -Wmissing-prototypes -O3 -std=c99"
+
+  build_gxx:
+    name: g++ [Ubuntu]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: install dependencies
+      run: |
+        sudo apt-get -qqq update
+        sudo apt-get install -y build-essential gcc g++
+    - name: build as C++
+      run: |
+        cd tinymt
+        make CC="g++ -Wall -Wextra -Werror -Wsign-compare -Wconversion -O3"
