@@ -174,7 +174,7 @@ inline static uint64_t tinymt64_generate_uint64(tinymt64_t * random) {
  */
 inline static double tinymt64_generate_double(tinymt64_t * random) {
     tinymt64_next_state(random);
-    return (tinymt64_temper(random) >> 11) * TINYMT64_MUL;
+    return (double)(tinymt64_temper(random) >> 11) * TINYMT64_MUL;
 }
 
 /**
