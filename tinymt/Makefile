@@ -2,7 +2,8 @@
 
 #DDEBUG = -O0 -g -ggdb -DDEBUG=1
 
-CC = gcc -Wall -O3 -std=c99 -Wmissing-prototypes $(DDEBUG)
+CC = gcc -Wall -Wextra -Wsign-compare -Wconversion -Wmissing-prototypes \
+-O3 -std=c99 $(DDEBUG)
 #CC = icc -Wall -O3 -std=c99 -Wmissing-prototypes $(DDEBUG)
 
 all:  check32 check64

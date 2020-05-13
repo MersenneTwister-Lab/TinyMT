@@ -25,13 +25,13 @@ int main(int argc, char * argv[]) {
         return -1;
     }
     tinymt32_t tinymt;
-    tinymt.mat1 = strtoul(argv[1], NULL, 16);
-    tinymt.mat2 = strtoul(argv[2], NULL, 16);
-    tinymt.tmat = strtoul(argv[3], NULL, 16);
-    int seed = 1;
+    tinymt.mat1 = (uint32_t)strtoul(argv[1], NULL, 16);
+    tinymt.mat2 = (uint32_t)strtoul(argv[2], NULL, 16);
+    tinymt.tmat = (uint32_t)strtoul(argv[3], NULL, 16);
+    uint32_t seed = 1;
     uint32_t seed_array[5];
     if (argc >= 5) {
-        seed = strtol(argv[4], NULL, 0);
+        seed = (uint32_t)strtoul(argv[4], NULL, 0);
     }
     printf("tinymt32 0x%08" PRIx32, tinymt.mat1);
     printf(" 0x%08" PRIx32, tinymt.mat2);
