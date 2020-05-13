@@ -1,3 +1,7 @@
+ver. 1.1.2
+-------
+code clean up for compiler warnings.
+
 ver. 1.1.1
 -------
 Version No. consistency
