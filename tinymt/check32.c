@@ -33,15 +33,15 @@ int main(int argc, char * argv[]) {
     if (argc >= 5) {
 	seed = strtol(argv[4], NULL, 0);
     }
-    printf("tinymt32 0x%08"PRIx32, tinymt.mat1);
-    printf(" 0x%08"PRIx32, tinymt.mat2);
-    printf(" 0x%08"PRIx32, tinymt.tmat);
+    printf("tinymt32 0x%08" PRIx32, tinymt.mat1);
+    printf(" 0x%08" PRIx32, tinymt.mat2);
+    printf(" 0x%08" PRIx32, tinymt.tmat);
     printf(" seed = %d\n", seed);
     tinymt32_init(&tinymt, seed);
     printf("32-bit unsigned integers r, where 0 <= r < 2^32\n");
     for (int i = 0; i < 10; i++) {
 	for (int j = 0; j < 5; j++) {
-	    printf("%10"PRIu32" ", tinymt32_generate_uint32(&tinymt));
+	    printf("%10" PRIu32" ", tinymt32_generate_uint32(&tinymt));
 	}
 	printf("\n");
     }

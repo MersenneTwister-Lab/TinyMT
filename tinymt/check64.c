@@ -33,15 +33,15 @@ int main(int argc, char * argv[]) {
     if (argc >= 5) {
 	seed = strtol(argv[4], NULL, 0);
     }
-    printf("tinymt64 0x%08"PRIx32, tinymt.mat1);
-    printf(" 0x%08"PRIx32, tinymt.mat2);
-    printf(" 0x%016"PRIx64, tinymt.tmat);
+    printf("tinymt64 0x%08" PRIx32, tinymt.mat1);
+    printf(" 0x%08" PRIx32, tinymt.mat2);
+    printf(" 0x%016" PRIx64, tinymt.tmat);
     printf(" seed = %d\n", seed);
     tinymt64_init(&tinymt, seed);
     printf("64-bit unsigned integers r, where 0 <= r < 2^64\n");
     for (int i = 0; i < 10; i++) {
 	for (int j = 0; j < 3; j++) {
-	    printf("%20"PRIu64" ", tinymt64_generate_uint64(&tinymt));
+	    printf("%20" PRIu64" ", tinymt64_generate_uint64(&tinymt));
 	}
 	printf("\n");
     }
