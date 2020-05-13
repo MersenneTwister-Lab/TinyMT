@@ -104,8 +104,9 @@ inline static uint32_t tinymt32_temper(tinymt32_t * random) {
         + (random->status[2] >> TINYMT32_SH8);
 #endif
     t0 ^= t1;
-    int32_t const a = -((int32_t)(t1 & 1)) & (int32_t)random->tmat;
-    t0 ^= (uint32_t)a;
+    if ((t1 & 1) != 0) {
+        t0 ^= random->tmat;
+    }
     return t0;
 }
 
@@ -131,9 +132,11 @@ inline static float tinymt32_temper_conv(tinymt32_t * random) {
         + (random->status[2] >> TINYMT32_SH8);
 #endif
     t0 ^= t1;
-    int32_t const a = -((int32_t)(t1 & 1)) & (int32_t)random->tmat;
-    uint32_t const b = ((t0 ^ ((uint32_t)a)) >> 9) | UINT32_C(0x3f800000);
-    conv.u = b;
+    if ((t1 & 1) != 0) {
+        conv.u  = ((t0 ^ random->tmat) >> 9) | UINT32_C(0x3f800000);
+    } else {
+        conv.u  = (t0 >> 9) | UINT32_C(0x3f800000);
+    }
     return conv.f;
 }
 
@@ -159,9 +162,11 @@ inline static float tinymt32_temper_conv_open(tinymt32_t * random) {
         + (random->status[2] >> TINYMT32_SH8);
 #endif
     t0 ^= t1;
-    int32_t const a = -((int32_t)(t1 & 1)) & (int32_t)random->tmat;
-    uint32_t const b = ((t0 ^ ((uint32_t)a)) >> 9) | UINT32_C(0x3f800001);
-    conv.u = b;
+        if ((t1 & 1) != 0) {
+        conv.u  = ((t0 ^ random->tmat) >> 9) | UINT32_C(0x3f800001);
+    } else {
+        conv.u  = (t0 >> 9) | UINT32_C(0x3f800001);
+    }
     return conv.f;
 }
 

@@ -25,18 +25,18 @@ int main(int argc, char * argv[]) {
         return -1;
     }
     tinymt64_t tinymt;
-    tinymt.mat1 = strtoul(argv[1], NULL, 16);
-    tinymt.mat2 = strtoul(argv[2], NULL, 16);
-    tinymt.tmat = strtoull(argv[3], NULL, 16);
-    int seed = 1;
+    tinymt.mat1 = (uint32_t)strtoul(argv[1], NULL, 16);
+    tinymt.mat2 = (uint32_t)strtoul(argv[2], NULL, 16);
+    tinymt.tmat = (uint64_t)strtoull(argv[3], NULL, 16);
+    uint64_t seed = 1;
     uint64_t seed_array[5];
     if (argc >= 5) {
-        seed = strtol(argv[4], NULL, 0);
+        seed = (uint64_t)strtoull(argv[4], NULL, 0);
     }
     printf("tinymt64 0x%08" PRIx32, tinymt.mat1);
     printf(" 0x%08" PRIx32, tinymt.mat2);
     printf(" 0x%016" PRIx64, tinymt.tmat);
-    printf(" seed = %d\n", seed);
+    printf(" seed = %" PRIu64 "\n", seed);
     tinymt64_init(&tinymt, seed);
     printf("64-bit unsigned integers r, where 0 <= r < 2^64\n");
     for (int i = 0; i < 10; i++) {
@@ -45,7 +45,7 @@ int main(int argc, char * argv[]) {
         }
         printf("\n");
     }
-    printf("init_by_array {%d}\n", seed);
+    printf("init_by_array {%" PRIu64 "}\n", seed);
     seed_array[0] = seed;
     tinymt64_init_by_array(&tinymt, seed_array, 1);
     printf("double numbers r, where 0.0 <= r < 1.0\n");
