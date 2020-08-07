@@ -1,6 +1,6 @@
 ver. 1.1.2
 -------
-code clean up for compiler warnings.
+code clean up for compiler warnings. (2020-5-13)
 
 ver. 1.1.1
 -------

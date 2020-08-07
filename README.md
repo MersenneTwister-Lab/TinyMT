@@ -1,4 +1,4 @@
-TitinyMT ver. 1.1.1
+TinyMT ver. 1.1.2
 ===================
 
 Tiny Mersenne Twister(TinyMT).

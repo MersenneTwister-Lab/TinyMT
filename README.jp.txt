@@ -1,6 +1,6 @@
  =================================================================
- tinymt ver. 1.1.1
- 2016.5.13
+ tinymt ver. 1.1.2
+ 2020.5.13
 
  Tiny Mersenne Twister(tinymt).
  Pseudo random number generators whose periods are 2^127-1.
