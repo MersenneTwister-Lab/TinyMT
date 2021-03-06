@@ -69,7 +69,7 @@ int main(int argc, char * argv[]) {
         }
         printf("\n");
     }
-    printf("double numbers r, where 0.0 <= r < 1.0\n");
+    printf("double numbers r, where 0.0 < r < 1.0\n");
     for (int i = 0; i < 12; i++) {
         for (int j = 0; j < 4; j++) {
             printf("%.15f ", tinymt64_generate_doubleOO(&tinymt));
