@@ -222,7 +222,6 @@ inline static float tinymt32_generate_float01(tinymt32_t * random) {
  * @return floating point number r (0.0 < r <= 1.0)
  */
 inline static float tinymt32_generate_floatOC(tinymt32_t * random) {
-    tinymt32_next_state(random);
     return 1.0f - tinymt32_generate_float(random);
 }
 
